@@ -25,15 +25,15 @@ public class Maquina {
             else{
                 if(mp.verificar_quant(demanda)){
                     mp.consumir(demanda);
-                    System.out.printf("imprimindo PCB");
+                    System.out.printf("Imprimindo PCB");
                 }
                 else{
-                    System.out.printf("Estoque insuficiente");
+                    System.out.printf("Estoque insuficiente de cobre");
                 }
             }
         }
         else {
-           System.out.printf(" desligada%n");
+           System.out.printf("Desligada%n");
         }
     }
      public String getNome (){
