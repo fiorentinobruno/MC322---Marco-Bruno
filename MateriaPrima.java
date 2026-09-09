@@ -2,41 +2,43 @@
 public class MateriaPrima {
     private String id;
     private String nome;
-    private double quant;
-    private String uni;
-    private double quant_min;
+    private double quantidade;
+    private String unidade;
+    private double quantidadeMinima;
 
-    public MateriaPrima(String id, String nome, double quant, String uni, double quant_min){
+    public MateriaPrima(String id, String nome, double quantidade, String unidade, double quantidadeMinima) {
         this.id = id;
         this.nome = nome;
-        this.quant = quant;
-        this.uni  = uni;
-        this.quant_min = quant_min;
-    
-    }
-
-    public boolean verificar_quant(double consumido){
-        return quant >= consumido;
+        this.quantidade = quantidade;
+        this.unidade = unidade;
+        this.quantidadeMinima = quantidadeMinima;
 
     }
-    public double add_estoque(double adicionado){
-        return quant = quant + adicionado;
+
+    public boolean verificarDisponibilidade(double consumido) {
+        return quantidade >= consumido && quantidade >= quantidadeMinima;
+
     }
 
-    public double consumir (double consumido){
-        return quant = quant - consumido;
+    public void adicionarEstoque(double adicionado) {
+        quantidade += adicionado;
     }
 
-    public String getID (){
+    public void consumir(double consumido) {
+        quantidade -= consumido;
+    }
+
+    public String getId() {
         return id;
     }
 
-    public String getName (){
+    public String getNome() {
         return nome;
     }
-    public double getQuant (){
-        return quant;
+
+    public double getQuantidade() {
+        return quantidade;
     }
-    
+
     
 }

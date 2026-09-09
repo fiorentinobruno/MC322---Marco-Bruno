@@ -1,35 +1,39 @@
-public class EstacaoInspecao{
+public class EstacaoInspecao {
     private boolean ativa;
-    private int produtosInspencionados;
+    private int produtosInspecionados;
 
-    public EstacaoInspecao(boolean ativa, int produtosInspencionados){
-        this.ativa = ativa;
-        this.produtosInspencionados = produtosInspencionados;
+    public EstacaoInspecao() {
+        this.ativa = false;
+        this.produtosInspecionados = 0;
     }
 
-    public void ativar(){
+    public void ativar() {
         this.ativa = true;
 
     }
-    public void desativar(){
+
+    public void desativar() {
         this.ativa = false;
 
     }
 
-    public void inspecionar(){
-        if (this.ativa){
-            produtosInspencionados ++;
-            System.out.printf( "Produto inspecionado com sucesso%n");
+    public void inspecionar(Produto produto) {
+        if (!this.ativa) {
+            System.out.println("Estação desativada. Ative-a para inspecionar o produto.");
+            return;
         }
-        else{
-            System.out.printf( "Produto reprovado na fase de inspeção%n");
+        if (!produto.getStatus().equals("processado")) {
+            System.out.println("Produto ainda não foi processado pela máquina.");
+            return;
         }
-        
+        produto.aprovar();
+        produtosInspecionados++;
+        System.out.println("Produto inspecionado com sucesso");
 
     }
 
-    public int getTotalInspecionados(){
-        return produtosInspencionados;
+    public int getTotalInspecionados() {
+        return produtosInspecionados;
 
     }
 

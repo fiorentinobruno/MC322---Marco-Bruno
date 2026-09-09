@@ -4,43 +4,45 @@ public class Maquina {
     private boolean ligada;
     private double capacidadeMax;
 
-    public  Maquina(String nome, boolean ligada, double capacidadeMax ){
+    public Maquina(String nome, boolean ligada, double capacidadeMax) {
         this.nome = nome;
         this.ligada = ligada;
         this.capacidadeMax = capacidadeMax;
     }
 
-    public void ligar(){
+    public void ligar() {
         this.ligada = true;
     }
-    public void desligar(){
+
+    public void desligar() {
         this.ligada = false;
     }
-    public void processar(MateriaPrima mp, double demanda){
-        if (this.ligada  ){
-            System.out.printf(" ligada%n");
-            if(this.capacidadeMax < demanda){
-                System.out.printf("A demanda excede a capacidade máxima da máquna%n");
-            }
-            else{
-                if(mp.verificarQuant(demanda)){
+
+    public void processar(MateriaPrima mp, Produto produto) {
+        double demanda = produto.getDemandaMateriaPrima();
+        if (this.ligada) {
+            if (this.capacidadeMax < demanda) {
+                System.out.println("A demanda excede a capacidade máxima da máquina");
+            } else {
+                if (mp.verificarDisponibilidade(demanda)) {
                     mp.consumir(demanda);
-                    System.out.printf("Imprimindo PCB");
-                }
-                else{
-                    System.out.printf("Estoque insuficiente de cobre");
+                    produto.processar(mp.getId());
+                    System.out.println("Produzindo " + produto.getNome() + "...");
+                } else {
+                    System.out.println("Estoque insuficiente de " + mp.getNome());
                 }
             }
-        }
-        else {
-           System.out.printf("Desligada%n");
+        } else {
+            System.out.println("Máquina desligada");
         }
     }
-     public String getNome (){
+
+    public String getNome() {
         return nome;
     }
-    public boolean ligada(){
-            return this.ligada;
+
+    public boolean estaLigada() {
+        return this.ligada;
     }
 
 }

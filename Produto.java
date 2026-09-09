@@ -3,38 +3,46 @@ public class Produto {
     private String id;
     private String nome;
     private String status;
-    private double quant_disponivel;
-    private double quant_necessaria;
+    private double quantidadeMateriaPrimaNecessaria;
+    private String materiaPrimaUsada;
 
-    public Produto(String id, String nome, String status, double quant_necessaria){
+    public Produto(String id, String nome, double quantidadeMateriaPrimaNecessaria) {
         this.id = id;
         this.nome = nome;
-        this.status = status;
-        this.quant_necessaria = quant_necessaria;
-        this.quant_disponivel = quant_disponivel;
+        this.status = "aguardando processamento";
+        this.quantidadeMateriaPrimaNecessaria = quantidadeMateriaPrimaNecessaria;
     }
 
-    public void processar( ){
-        this.status ="processado";
+    public void processar(String idMateriaPrima) {
+        this.status = "processado";
+        this.materiaPrimaUsada = idMateriaPrima;
     }
-    public void defDemanda(double demanda){
-        this.quant_necessaria = demanda; 
+
+    public void definirDemandaMateriaPrima(double demanda) {
+        this.quantidadeMateriaPrimaNecessaria = demanda;
     }
-    public double getDemanda( ){
-        return quant_necessaria;
+
+    public double getDemandaMateriaPrima() {
+        return quantidadeMateriaPrimaNecessaria;
     }
-    public String getID (){
+
+    public String getId() {
         return id;
     }
 
-    public String getNome (){
+    public String getNome() {
         return nome;
     }
-     public double getQuant (){
-        return quant_disponivel;
-    }
-    public String getStatus (){
+
+    public String getStatus() {
         return status;
     }
 
+    public void aprovar() {
+        this.status = "inspecionado";
+    }
+
+    public String getMateriaPrimaUsada() {
+    return materiaPrimaUsada;
+}
 }

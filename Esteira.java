@@ -1,45 +1,47 @@
-public class Esteira{
-    private String item;
+public class Esteira {
+    private Object item;
     private boolean emMovimento;
-    private double capacidade_max;
+    private double capacidadeMaxima;
 
-    public Esteira (String item, boolean emMovimento,double capacidade_max){
-        this.item = item;
-        this.emMovimento = emMovimento;
-        this.capacidade_max = capacidade_max;
+    public Esteira(double capacidadeMaxima) {
+        this.capacidadeMaxima = capacidadeMaxima;
     }
 
-    public void ligar(){
-        this.emMovimento = true;
+    public void ligar() {
+        emMovimento = true;
     }
 
-    public void desligar(){
-        this.emMovimento = false;
+    public void desligar() {
+        emMovimento = false;
     }
 
-    public void adicionarItem( String novoItem){ 
-        if (this.item == null){
-            this.item = novoItem;
-        
-        }
-        else {
-            System.out.printf("Esteira em funcionamento, tente mais tarde%n");
+    public boolean adicionarItem(Object novoItem, double quantidade) {
+        if (!emMovimento) {
+            System.out.println("A esteira não está em movimento. Item não transportado.");
+            return false;
         }
 
+        if (item != null) {
+            System.out.println("A esteira já contém um item.");
+            return false;
+        }
+
+        if (!verificarCapacidade(quantidade)) {
+            System.out.println("Excede a capacidade máxima da esteira");
+            return false;
+        }
+
+        item = novoItem;
+        return true;
     }
 
-    public String removerItem(){
-        String itemRemovido = this.item;
-        this.item = null;
-        return itemRemovido;
-        
-
+    public Object removerItem() {
+        Object temp = item;
+        item = null;
+        return temp;
     }
 
-    public boolean verificarCapacidade(double cm_de_cobre){
-        return cm_de_cobre <= capacidade_max;
+    public boolean verificarCapacidade(double quant) {
+        return quant <= capacidadeMaxima;
     }
-
-
-    
 }
