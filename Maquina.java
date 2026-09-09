@@ -2,12 +2,12 @@
 public class Maquina {
     private String nome;
     private boolean ligada;
-    private double capacidade_max;
+    private double capacidadeMax;
 
-    public  Maquina(String nome, boolean ligada, double capacidade_max ){
+    public  Maquina(String nome, boolean ligada, double capacidadeMax ){
         this.nome = nome;
         this.ligada = ligada;
-        this.capacidade_max = capacidade_max;
+        this.capacidadeMax = capacidadeMax;
     }
 
     public void ligar(){
@@ -19,11 +19,11 @@ public class Maquina {
     public void processar(MateriaPrima mp, double demanda){
         if (this.ligada  ){
             System.out.printf(" ligada%n");
-            if(this.capacidade_max < demanda){
+            if(this.capacidadeMax < demanda){
                 System.out.printf("A demanda excede a capacidade máxima da máquna%n");
             }
             else{
-                if(mp.verificar_quant(demanda)){
+                if(mp.verificarQuant(demanda)){
                     mp.consumir(demanda);
                     System.out.printf("Imprimindo PCB");
                 }
