@@ -1,0 +1,8 @@
+    A escolha do tema foi feita pelo Marco, já que ele possui um contato com PCBs na sua atividade extracurricular ( o projeto Jupiter). Nesse projeto
+ele entrou em contato com algumas placas de circuito impresso necessárias para o módulo de controle de uma célula combustível. Além dessa 
+familiaridade de um dos membros da dupla, achamos que o tema PCB para o nosso trabalho teria uma boa relação com nossos cursos de graduação
+(ciências da computação e engenharia de controle e automação). Então fizemos algumas pesquisas sobre nosso produto(como qual matéria prima usarmos)
+e demos inicio ao nosso projeto.
+    A planta industrial pode ser expandida para montagem de componentes na placa, como portas lógicas. Ou seja sairmos de uma PCB para uma PCBA, 
+assim podemos incluir diversos componentes nas nossas placas e depois testá-las. 
+ 
