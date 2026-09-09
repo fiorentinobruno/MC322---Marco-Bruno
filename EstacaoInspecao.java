@@ -1,36 +1,38 @@
-public class EstacaoInspecao{
+public class EstacaoInspecao {
     private boolean ativa;
     private int produtosInspecionados;
 
-    public EstacaoInspecao(boolean ativa, int produtosInspencionados){
-        this.ativa = ativa;
-        this.produtosInspecionados = produtosInspencionados;
+    public EstacaoInspecao() {
+        this.ativa = false;
+        this.produtosInspecionados = 0;
     }
 
-    public void ativar(){
+    public void ativar() {
         this.ativa = true;
 
     }
-    public void desativar(){
+
+    public void desativar() {
         this.ativa = false;
 
     }
 
-    public void inspecionar(Produto produto){
-         if (!this.ativa){
-            System.out.printf("Bancada desativada. Ative-a antes de inspecionar.%n");
+    public void inspecionar(Produto produto) {
+        if (!this.ativa) {
+            System.out.println("Estação desativada. Ative-a para inspecionar o produto.");
             return;
         }
-        if (!produto.getStatus().equals("processado")){
-            System.out.printf("A placa ainda não passou pela corrosora.%n");
+        if (!produto.getStatus().equals("processado")) {
+            System.out.println("Produto ainda não foi processado pela máquina.");
             return;
         }
         produto.aprovar();
         produtosInspecionados++;
-        System.out.printf("Produto inspecionado com sucesso%n");
+        System.out.println("Produto inspecionado com sucesso");
+
     }
 
-    public int getTotalInspecionados(){
+    public int getTotalInspecionados() {
         return produtosInspecionados;
 
     }

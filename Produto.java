@@ -3,44 +3,46 @@ public class Produto {
     private String id;
     private String nome;
     private String status;
-    private double quantNecessaria;
+    private double quantidadeMateriaPrimaNecessaria;
+    private String materiaPrimaUsada;
 
-    public Produto(String id, String nome, String status, double quantNecessaria){
+    public Produto(String id, String nome, double quantidadeMateriaPrimaNecessaria) {
         this.id = id;
         this.nome = nome;
-        this.status = status;
-        this.quantNecessaria = quantNecessaria;
+        this.status = "aguardando processamento";
+        this.quantidadeMateriaPrimaNecessaria = quantidadeMateriaPrimaNecessaria;
     }
 
-    public void processar(String idMateriaPrima){
+    public void processar(String idMateriaPrima) {
         this.status = "processado";
         this.materiaPrimaUsada = idMateriaPrima;
     }
 
-     public void aprovar(){
-        this.status = "inspecionado";
+    public void definirDemandaMateriaPrima(double demanda) {
+        this.quantidadeMateriaPrimaNecessaria = demanda;
     }
 
-    public void defDemanda(double demanda){
-        this.quantNecessaria = demanda; 
+    public double getDemandaMateriaPrima() {
+        return quantidadeMateriaPrimaNecessaria;
     }
-    public double getDemanda( ){
-        return quantNecessaria;
-    }
-    public String getId (){
+
+    public String getId() {
         return id;
     }
 
-    public String getNome (){
+    public String getNome() {
         return nome;
     }
 
-    public String getStatus (){
+    public String getStatus() {
         return status;
     }
 
-     public String getMateriaPrimaUsada (){
-        return materiaPrimaUsada;
+    public void aprovar() {
+        this.status = "inspecionado";
     }
 
+    public String getMateriaPrimaUsada() {
+    return materiaPrimaUsada;
+}
 }
