@@ -40,5 +40,8 @@ public class MateriaPrima {
         return quantidade;
     }
 
+    public String getUnidade() {
+        return unidade;
+    }
     
 }
