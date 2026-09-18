@@ -34,6 +34,7 @@ public class Corrosora extends Maquina{
 
         mp.consumir(produto.getQuantidadeMateriaPrimaPorUnidade());
         produto.processar(mp.getId());
+        System.out.println("Corroendo " + produto.getNome() + " (" + produto.getId() + "). Trilhas de cobre reveladas.");
 
         if (random.nextDouble() < chanceAumentarFalha) {
             produto.aumentarProbabilidadeFalha(0.1);

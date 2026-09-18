@@ -33,7 +33,7 @@ public class Embaladora extends Maquina {
         }
 
         mp.consumir(quantidadeEsdBagPorEmbalagem);
-        produto.processar(mp.getId());
+        produto.setStatus("embalado");
         System.out.println("Embalando " + produto.getNome() + " (" + produto.getId() + ") em saco antiestático...");
 
         if (random.nextDouble() < chanceAumentarFalha) {
@@ -43,4 +43,3 @@ public class Embaladora extends Maquina {
     }
 }
 
-//MP será ssaquinho ECD antiestatico

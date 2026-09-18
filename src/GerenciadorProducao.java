@@ -89,6 +89,10 @@ public class GerenciadorProducao {
         embaladora.ligar();
         estacaoInspecao.ligar();
 
+        System.out.println("\n--- Iniciando produção de " + tipoProduto + " ---");
+        System.out.println("[OK] Linha ligada: " + corrosora.getNome() + ", "
+        + embaladora.getNome() + ", " + estacaoInspecao.getNome());
+        
         corrosora.processar(materiaPrimaPrincipal, produto);
         if (!produto.getStatus().equals("processado")) {
             System.out.println("Produção interrompida na corrosão.");
@@ -161,12 +165,9 @@ public class GerenciadorProducao {
     }
 
     private double calcularCustoProducao(Produto produto) {
-        double custoMaterial = produto.getQuantidadeMateriaPrimaPorUnidade()
-                * materiaPrimaPrincipal.getCustoPorUnidade();
-        double custoMaquinas = corrosora.getCustoOperacao()
+        return corrosora.getCustoOperacao()
                 + embaladora.getCustoOperacao()
                 + estacaoInspecao.getCustoOperacao();
-        return custoMaterial + custoMaquinas;
     }
 
     private Demanda buscarDemanda(String tipoProduto) {
@@ -217,5 +218,11 @@ public class GerenciadorProducao {
         corrosora.desligar();
         embaladora.desligar();
         estacaoInspecao.desligar();
+    }
+
+    public double consultarCustoOperacao() {
+        return corrosora.getCustoOperacao()
+                + embaladora.getCustoOperacao()
+                + estacaoInspecao.getCustoOperacao();
     }
 }
