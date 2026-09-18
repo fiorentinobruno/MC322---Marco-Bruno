@@ -1,40 +1,52 @@
-public class EstacaoInspecao {
-    private boolean ativa;
-    private int produtosInspecionados;
+import java.util.Random;
 
-    public EstacaoInspecao() {
-        this.ativa = false;
-        this.produtosInspecionados = 0;
+public class EstacaoInspecao extends Maquina {
+    private double fator;
+    private double quantidadeSeloPorInspecao;
+    private Random random;
+
+    public EstacaoInspecao(String nome, double capacidadeMax, double custoOperacao, double probabilidadeFalha, double fator, double quantidadeSeloPorInspecao) {
+        super(nome, capacidadeMax, probabilidadeFalha, custoOperacao);
+        this.fator = fator;
+        this.quantidadeSeloPorInspecao = quantidadeSeloPorInspecao;
+        this.random = new Random();
     }
 
-    public void ativar() {
-        this.ativa = true;
-
+    @Override
+    public String getTipo() {
+        return "Estação de Inspeção";
     }
 
-    public void desativar() {
-        this.ativa = false;
-
-    }
-
-    public void inspecionar(Produto produto) {
-        if (!this.ativa) {
-            System.out.println("Estação desativada. Ative-a para inspecionar o produto.");
+    @Override
+    public void processar(MateriaPrima mp, Produto produto) {
+        if (!estaLigada()) {
+            System.out.println("A " + getNome() + " está desligada.");
             return;
         }
-        if (!produto.getStatus().equals("processado")) {
-            System.out.println("Produto ainda não foi processado pela máquina.");
+
+        if (verificarFalha()) {
+            desligar();
+            System.out.println("Falha técnica na " + getNome() + "! Inspeção de " + produto.getId() + " não pôde ser concluída. Máquina desligada.");
             return;
         }
-        produto.aprovar();
-        produtosInspecionados++;
-        System.out.println("Produto inspecionado com sucesso");
 
+        if (mp.getQuantidade() < quantidadeSeloPorInspecao) {
+            System.out.println("Não há " + mp.getNome() + " suficiente para selar a inspeção.");
+            return;
+        }
+
+        mp.consumir(quantidadeSeloPorInspecao);
+
+        double chanceRejeicao = (produto.getQualidade() * fator) + produto.getProbabilidadeFalhaAcumulada();
+
+        double sorteado = random.nextDouble();
+
+        if (sorteado < chanceRejeicao) {
+            produto.setStatus("defeituoso");
+            System.out.println("Produto " + produto.getId() + " rejeitado na inspeção (critério de qualidade).");
+        } else {
+            produto.aprovar();
+            System.out.println("Produto " + produto.getId() + " aprovado na inspeção! Selo de cera aplicado.");
+        }
     }
-
-    public int getTotalInspecionados() {
-        return produtosInspecionados;
-
-    }
-
 }

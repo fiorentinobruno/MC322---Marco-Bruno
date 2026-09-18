@@ -1,14 +1,25 @@
+import java.util.Random;
 
-public class Maquina {
+public abstract class Maquina {
     private String nome;
     private boolean ligada;
     private double capacidadeMax;
+    private double probabilidadeFalha;
+    private double custoOperacao;
 
-    public Maquina(String nome, boolean ligada, double capacidadeMax) {
+    private Random random;
+
+    public Maquina(String nome, double capacidadeMax, double probabilidadeFalha, double custoOperacao) {
         this.nome = nome;
-        this.ligada = ligada;
+        this.ligada = false;
         this.capacidadeMax = capacidadeMax;
+        this.probabilidadeFalha = probabilidadeFalha;
+        this.custoOperacao = custoOperacao;
+        this.random = new Random();
     }
+
+    public abstract void processar(MateriaPrima mp, Produto produto);
+    public abstract String getTipo();
 
     public void ligar() {
         this.ligada = true;
@@ -16,25 +27,6 @@ public class Maquina {
 
     public void desligar() {
         this.ligada = false;
-    }
-
-    public void processar(MateriaPrima mp, Produto produto) {
-        double demanda = produto.getDemandaMateriaPrima();
-        if (this.ligada) {
-            if (this.capacidadeMax < demanda) {
-                System.out.println("A demanda excede a capacidade máxima da máquina");
-            } else {
-                if (mp.verificarDisponibilidade(demanda)) {
-                    mp.consumir(demanda);
-                    produto.processar(mp.getId());
-                    System.out.println("Produzindo " + produto.getNome() + "...");
-                } else {
-                    System.out.println("Estoque insuficiente de " + mp.getNome());
-                }
-            }
-        } else {
-            System.out.println("Máquina desligada");
-        }
     }
 
     public String getNome() {
@@ -45,4 +37,17 @@ public class Maquina {
         return this.ligada;
     }
 
+    public double getCustoOperacao(){
+        return custoOperacao;
+    }
+
+    protected boolean verificarFalha(){
+        double sorteado = random.nextDouble();
+        return sorteado < probabilidadeFalha;
+    }
+
+
+    public double getCapacidadeMax() {
+        return capacidadeMax;
+    }
 }
