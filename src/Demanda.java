@@ -1,17 +1,17 @@
 public class Demanda {
     private String tipoProduto;
     private int quantidadeProdutos;
-    private boolean atendida;
+    private StatusDemanda status;
 
     public Demanda(String tipoProduto, int quantidadeProdutos) {
         this.tipoProduto = tipoProduto;
         this.quantidadeProdutos = quantidadeProdutos;
-        this.atendida = false;
+        status = StatusDemanda.PENDENTE;
     }
 
     public void atualizarQuantidade(int quantidadeAdicional) {
         this.quantidadeProdutos += quantidadeAdicional;
-        this.atendida = false; // se chegou mais pedido, não está mais "totalmente atendida"
+        status = StatusDemanda.PENDENTE;
     }
 
     public double calcularMateriaPrimaNecessaria(double demandaMateriaPrimaPorUnidade) {
@@ -23,12 +23,29 @@ public class Demanda {
         if (this.quantidadeProdutos <= 0) {
             this.quantidadeProdutos = 0;
             atender();
+
         }
     }
 
-    public void atender() {
-        this.atendida = true;
+    public boolean atender() {
+        if (status == StatusDemanda.CANCELADA){
+             return false; 
+        }
+        status = StatusDemanda.CONCLUIDA;
+        return true;
     }
+
+    public void iniciarProducao(){
+        if (status == StatusDemanda.PENDENTE)
+       status = StatusDemanda.EM_PRODUCAO;
+    }
+
+    public void cancelar(){
+        status = StatusDemanda.CANCELADA;
+
+    }
+
+     
 
     public String getTipoProduto() {
         return tipoProduto;
@@ -38,7 +55,7 @@ public class Demanda {
         return quantidadeProdutos;
     }
 
-    public boolean isAtendida() {
-        return atendida;
+    public StatusDemanda getStatus() {
+        return status;
     }
 }
