@@ -4,8 +4,8 @@ public class Corrosora extends Maquina{
     private double chanceAumentarFalha;
     private Random random;
 
-    public Corrosora(String nome, double capacidadeMax, double custoOperacao, double chanceAumentarFalha){
-        super(nome, capacidadeMax, 0.0, custoOperacao);
+    public Corrosora(String nome, double capacidadeMax, double custoOperacao, double chanceAumentarFalha, double custoReparo){
+        super(nome, capacidadeMax, 0.0, custoOperacao, 250);
         this.chanceAumentarFalha = chanceAumentarFalha;
         this.random = new Random();
     }

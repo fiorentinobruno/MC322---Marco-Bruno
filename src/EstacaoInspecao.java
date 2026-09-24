@@ -5,8 +5,8 @@ public class EstacaoInspecao extends Maquina {
     private double quantidadeSeloPorInspecao;
     private Random random;
 
-    public EstacaoInspecao(String nome, double capacidadeMax, double custoOperacao, double probabilidadeFalha, double fator, double quantidadeSeloPorInspecao) {
-        super(nome, capacidadeMax, probabilidadeFalha, custoOperacao);
+    public EstacaoInspecao(String nome, double capacidadeMax, double custoOperacao, double probabilidadeFalha, double fator, double quantidadeSeloPorInspecao, double custoReparo) {
+        super(nome, capacidadeMax, probabilidadeFalha, custoOperacao, 125);
         this.fator = fator;
         this.quantidadeSeloPorInspecao = quantidadeSeloPorInspecao;
         this.random = new Random();

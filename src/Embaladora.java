@@ -6,7 +6,7 @@ public class Embaladora extends Maquina {
     private Random random;
 
     public Embaladora(String nome, double capacidadeMax, double custoOperacao, double chanceAumentarFalha, double quantidadeEsdBagPorEmbalagem) {
-        super(nome, capacidadeMax, 0.0, custoOperacao); 
+        super(nome, capacidadeMax, 0.0, custoOperacao, 80); 
         this.chanceAumentarFalha = chanceAumentarFalha;
         this.quantidadeEsdBagPorEmbalagem = quantidadeEsdBagPorEmbalagem;
         this.random = new Random();
@@ -23,6 +23,13 @@ public class Embaladora extends Maquina {
             System.out.println("A " + getNome() + " está desligada.");
             return;
         }
+
+        if (verificarFalha()) {
+            desligar();
+            System.out.println("Falha técnica na " + getNome() + "! Embalagem de " + produto.getId() + " não concluída.\n");
+            return;
+        }    
+
         if (quantidadeEsdBagPorEmbalagem > getCapacidadeMax()) {
             System.out.println("A capacidade máxima da " + getNome() + " foi ultrapassada.");
             return;
@@ -31,6 +38,8 @@ public class Embaladora extends Maquina {
             System.out.println("Não há " + mp.getNome() + " suficiente para embalar.");
             return;
         }
+
+        aplicarDesgaste(1.0);
 
         mp.consumir(quantidadeEsdBagPorEmbalagem);
         produto.setStatus("embalado");

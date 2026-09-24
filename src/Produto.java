@@ -1,5 +1,5 @@
 
-public abstract class Produto {
+public abstract class Produto implements Auditavel{
     private String id;
     private String nome;
     private String status;
