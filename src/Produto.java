@@ -77,4 +77,22 @@ public abstract class Produto implements Auditavel{
     public static int getTotalProdutosFabricados(){
         return totalProdutosFabricados;
     }
+
+    @Override
+    public boolean precisaManutencao() {
+        return "defeituoso".equalsIgnoreCase(this.status) || this.probabilidadeFalhaAcumulada > 0.25;
+    }
+
+    @Override
+    public String gerarRelatorioDiagnostico() {
+        return String.format(
+            "ID: %s | Tipo: %s | Qualidade: %.2f | Risco Acumulado: %.1f%% | Status: %s | Alerta: %s",
+            getId(),
+            getTipo(),
+            getQualidade(),
+            this.probabilidadeFalhaAcumulada * 100.0,
+            getStatus(),
+            precisaManutencao() ? "DESCARTE" : "Aprovado no Controle de Qualidade"
+        );
+    }
 }

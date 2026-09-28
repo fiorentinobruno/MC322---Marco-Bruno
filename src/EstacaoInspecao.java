@@ -5,7 +5,7 @@ public class EstacaoInspecao extends Maquina {
     private double quantidadeSeloPorInspecao;
     private Random random;
 
-    public EstacaoInspecao(String nome, double capacidadeMax, double custoOperacao, double probabilidadeFalha, double fator, double quantidadeSeloPorInspecao, double custoReparo) {
+    public EstacaoInspecao(String nome, double capacidadeMax, double custoOperacao, double probabilidadeFalha, double fator, double quantidadeSeloPorInspecao) {
         super(nome, capacidadeMax, probabilidadeFalha, custoOperacao, 125);
         this.fator = fator;
         this.quantidadeSeloPorInspecao = quantidadeSeloPorInspecao;
@@ -26,6 +26,12 @@ public class EstacaoInspecao extends Maquina {
 
         if (verificarFalha()) {
             desligar();
+            System.out.println("Falha técnica na " + getNome() + "! O processamento de " + produto.getId() + " foi interrompido.");
+            return;
+        }
+
+        if (verificarFalha()) {
+            desligar();
             System.out.println("Falha técnica na " + getNome() + "! Inspeção de " + produto.getId() + " não pôde ser concluída. Máquina desligada.");
             return;
         }
@@ -34,6 +40,8 @@ public class EstacaoInspecao extends Maquina {
             System.out.println("Não há " + mp.getNome() + " suficiente para selar a inspeção.");
             return;
         }
+
+        aplicarDesgaste(1.0);
 
         mp.consumir(quantidadeSeloPorInspecao);
 

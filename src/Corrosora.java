@@ -4,7 +4,7 @@ public class Corrosora extends Maquina{
     private double chanceAumentarFalha;
     private Random random;
 
-    public Corrosora(String nome, double capacidadeMax, double custoOperacao, double chanceAumentarFalha, double custoReparo){
+    public Corrosora(String nome, double capacidadeMax, double custoOperacao, double chanceAumentarFalha){
         super(nome, capacidadeMax, 0.0, custoOperacao, 250);
         this.chanceAumentarFalha = chanceAumentarFalha;
         this.random = new Random();
@@ -22,6 +22,12 @@ public class Corrosora extends Maquina{
             return;
         } 
 
+        if (verificarFalha()) {
+            desligar();
+            System.out.println("Falha técnica na " + getNome() + "! O processamento de " + produto.getId() + " foi interrompido.");
+            return;
+        }
+
         if (produto.getQuantidadeMateriaPrimaPorUnidade() > getCapacidadeMax()){
             System.out.println("A capacidade máxima da " + getNome() + " foi ultrapassada.");
             return;
@@ -31,6 +37,8 @@ public class Corrosora extends Maquina{
             System.out.println("Não há matéria prima " + mp.getId() + " suficiente");
             return;
         }
+
+        aplicarDesgaste(1.0);
 
         mp.consumir(produto.getQuantidadeMateriaPrimaPorUnidade());
         produto.processar(mp.getId());
