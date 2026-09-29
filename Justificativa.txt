@@ -57,8 +57,8 @@ Gerenciador percorre uma lista de Auditavel com maquinas e produtos juntos, usan
 polimorfismo, e mostra se cada item precisa de manutencao ou descarte.
  
 Cenarios (enum Cenario):
-- Ideal: budget de R$ 10000, desgaste e falha normais.
-- Apocaliptico: budget de R$ 2500, desgaste 2x e falha 1.8x maiores.
+- Ideal: budget de R$ 6000, desgaste e falha normais.
+- Apocaliptico: budget de R$ 2000, desgaste 1.5x e falha 1.4x maiores.
 O cenario e escolhido no comeco e aplicado a todas as maquinas.
  
 Desgaste das maquinas:
@@ -74,10 +74,4 @@ Cada placa recebe um lote quando entra em producao. E separado do estoque de mat
 Menu:
 Menu principal com o cabecalho (estrategia, cenario e budget) e submenus de Demandas,
 Fabricacao, Consultar, Estrategia e Auditoria/Manutencao, alem da compra de materia-prima.
- 
-Outras decisoes:
-- Se uma maquina falha, a linha para naquela etapa e o budget so e cobrado das etapas concluidas.
-- O budget e checado antes de criar a placa, para nao gastar ID de placa a toa.
-- Corrigimos a inspecao, que sorteava a falha duas vezes.
-- A Esteira continua no projeto, herdada da Tarefa 1, mas nao entra no fluxo atual.
  
