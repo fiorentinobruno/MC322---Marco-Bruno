@@ -10,8 +10,8 @@ public abstract class Maquina implements Auditavel{
     private double desgasteMinimo;
     private double desgasteMaximo;
     private double custoReparo;
-
-
+    private double multiplicadorDesgaste;
+    private double multiplicadorFalha;  
 
     private Random random;
 
@@ -26,12 +26,23 @@ public abstract class Maquina implements Auditavel{
         this.desgasteMaximo = 3.0;
         this.desgasteMinimo = 0.5;
         this.custoReparo = custoReparo;
+        this.multiplicadorDesgaste = 1.0;
+        this.multiplicadorFalha = 1.0;
     }
 
     public abstract void processar(MateriaPrima mp, Produto produto);
     public abstract String getTipo();
 
+    public void aplicarCenario(Cenario c) {
+        this.multiplicadorDesgaste = c.getMultiplicadorDesgaste();
+        this.multiplicadorFalha = c.getMultiplicadorFalha();
+    }
+
     public void ligar() {
+        if (estaQuebrada()) {
+            System.out.println("A " + nome + " está quebrada e precisa de reparo.");
+            return;
+        }
         this.ligada = true;
     }
 
@@ -47,39 +58,39 @@ public abstract class Maquina implements Auditavel{
         return this.ligada;
     }
 
+    public boolean estaQuebrada() {
+        return saude <= 0;
+    }
+
     public double getCustoOperacao(){
         return custoOperacao;
     }
 
-    protected boolean verificarFalha(){
-        double sorteado = random.nextDouble();
-        return sorteado < calcularProbabilidadeFalhaAtual();
+    protected boolean verificarFalha() {
+        return random.nextDouble() < calcularProbabilidadeFalhaAtual();
     }
 
     public double getCapacidadeMax() {
         return capacidadeMax;
     }
 
-    public void aplicarDesgaste(double multiplicadorCenario){
+    public void aplicarDesgaste() {
         if (saude <= 0) return;
 
-        double intervalo = desgasteMaximo - desgasteMinimo;
-        double perdaAleatoria = desgasteMinimo + (random.nextDouble() * intervalo);
-
-        double desgasteTotal = perdaAleatoria * multiplicadorCenario;
-
-        this.saude -= desgasteTotal;
+        double perda = desgasteMinimo + random.nextDouble() * (desgasteMaximo - desgasteMinimo);
+        saude -= perda * multiplicadorDesgaste;
 
         if (saude <= 0) {
-            this.saude = 0;
+            saude = 0;
             desligar();
-            System.out.printf("A máquina " + getNome() + " quebrou totalmente por desgaste. É necessário manutenção.\n");
+            System.out.println("A máquina " + nome + " quebrou totalmente por desgaste. É necessária manutenção.");
         }
     }
 
     public double calcularProbabilidadeFalhaAtual() {
-            double desgasteProporcional = (100.0 - saude) / 100.0;
-            return probabilidadeFalha + (desgasteProporcional * (1.0 - probabilidadeFalha ));
+        double base = Math.min(1.0, probabilidadeFalha * multiplicadorFalha);
+        double desgasteProporcional = (100.0 - saude) / 100.0;
+        return base + desgasteProporcional * (1.0 - base);
     }
 
     public double getSaude(){
@@ -88,7 +99,7 @@ public abstract class Maquina implements Auditavel{
 
     public void reparar(){
             this.saude = 100;
-            System.out.printf("A máquina " + getNome() + " foi consertada. Sua saúde agora é 100.\n");
+            System.out.println("A máquina " + nome + " foi consertada. Sua saúde agora é 100.\n");
     }
 
     public double getCustoReparo() {

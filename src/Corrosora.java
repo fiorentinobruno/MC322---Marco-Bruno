@@ -5,7 +5,7 @@ public class Corrosora extends Maquina{
     private Random random;
 
     public Corrosora(String nome, double capacidadeMax, double custoOperacao, double chanceAumentarFalha){
-        super(nome, capacidadeMax, 0.0, custoOperacao, 250);
+        super(nome, capacidadeMax, 0.02, custoOperacao, 250);
         this.chanceAumentarFalha = chanceAumentarFalha;
         this.random = new Random();
     }
@@ -34,11 +34,11 @@ public class Corrosora extends Maquina{
         }
 
         if (!mp.verificarDisponibilidade(produto.getQuantidadeMateriaPrimaPorUnidade())) {
-            System.out.println("Não há matéria prima " + mp.getId() + " suficiente");
+            System.out.println("Não há matéria prima " + mp.getId() + " suficiente.");
             return;
         }
 
-        aplicarDesgaste(1.0);
+        aplicarDesgaste();
 
         mp.consumir(produto.getQuantidadeMateriaPrimaPorUnidade());
         produto.processar(mp.getId());
@@ -46,7 +46,7 @@ public class Corrosora extends Maquina{
 
         if (random.nextDouble() < chanceAumentarFalha) {
             produto.aumentarProbabilidadeFalha(0.1);
-            System.out.println("Problema na corrosão de " + produto.getId() + ". Probabilidade de falha aumentado em 10%.");
+            System.out.println("Problema na corrosão de " + produto.getId() + ". Probabilidade de falha aumentada em 10%.");
         }
 
 

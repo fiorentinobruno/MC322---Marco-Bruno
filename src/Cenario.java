@@ -1,6 +1,6 @@
 public enum Cenario {
-    IDEAL("Cenário Ideal", 10000.0, 1.0, 1.0),
-    APOCALIPTICO("Cenário Apocalíptico", 2500.0, 2.0, 1.8);
+    IDEAL("Cenário Ideal", 6000.0, 1.0, 1.0),
+    APOCALIPTICO("Cenário Apocalíptico", 2000.0, 1.5, 1.4);
 
     private final String nome;
     private final double budgetInicial;

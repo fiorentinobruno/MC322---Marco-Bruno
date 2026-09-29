@@ -1,5 +1,5 @@
 public  enum StatusDemanda{
-    PENDENTE("Aguarndando início"),
+    PENDENTE("Aguardando início"),
     EM_PRODUCAO("Em fabricação"),
     CONCLUIDA("Finalizada com sucesso"),
     CANCELADA("Cancelada");

@@ -10,9 +10,8 @@ public class Main {
     private static final String PLACA_DUPLA = "Placa Dupla";
     private static final String PLACA_MULTI = "Placa Multi-camada";
 
-    private static final double DEMANDA_SIMPLES = 4.0;
-    private static final double DEMANDA_DUPLA = 12.0;
-    private static final double DEMANDA_MULTI = 30.0;
+    private static final String LINHA = "==============================================================";
+    private static final String DIVISORIA = "--------------------------------------------------------------";
 
     private static final Scanner scanner = new Scanner(System.in);
 
@@ -23,31 +22,35 @@ public class Main {
         MateriaPrima cera     = new MateriaPrima("MP3", "Selo de cera", 100.0, "un", 10.0, 1.0);
 
         Corrosora corrosora = new Corrosora("Corrosora CU-1", 60.0, 10.0, 0.3);
-
         Embaladora embaladora = new Embaladora("Embaladora ESD-2", 60.0, 8.0, 0.2, 1.0);
-
         EstacaoInspecao inspecao = new EstacaoInspecao("Bancada de Teste", 60.0, 12.0, 0.1, 0.3, 1.0);
 
-        GerenciadorProducao gerenciador = new GerenciadorProducao(
-                laminado, esd, cera, corrosora, embaladora, inspecao, 1000.0);
+        exibirIntroducao(laminado);
+        Cenario cenario = escolherCenario();
 
-        exibirIntroducao(laminado, gerenciador);
+        GerenciadorProducao gerenciador = new GerenciadorProducao(
+                laminado, esd, cera, corrosora, embaladora, inspecao,
+                cenario, new EstrategiaOrdemChegada());
 
         boolean executando = true;
         while (executando) {
-            exibirMenu(gerenciador.getBudget());
+            exibirCabecalho(gerenciador);
+            System.out.println("1 - Demandas");
+            System.out.println("2 - Fabricação");
+            System.out.println("3 - Consultar");
+            System.out.println("4 - Comprar matéria-prima");
+            System.out.println("5 - Gerenciar estratégia");
+            System.out.println("6 - Auditoria e manutenção");
+            System.out.println("0 - SAIR");
             int opcao = lerInteiro("ESCOLHA: ");
 
             switch (opcao) {
-                case 1 -> atualizarDemanda(gerenciador, PLACA_SIMPLES);
-                case 2 -> atualizarDemanda(gerenciador, PLACA_DUPLA);
-                case 3 -> atualizarDemanda(gerenciador, PLACA_MULTI);
-                case 4 -> gerenciador.fabricarDemanda(PLACA_SIMPLES);
-                case 5 -> gerenciador.fabricarDemanda(PLACA_DUPLA);
-                case 6 -> gerenciador.fabricarDemanda(PLACA_MULTI);
-                case 7 -> gerenciador.exibirArmazem();
-                case 8 -> gerenciador.exibirEstoqueMateriaPrima();
-                case 9 -> comprarMateriaPrima(gerenciador);
+                case 1 -> menuDemandas(gerenciador);
+                case 2 -> menuFabricacao(gerenciador);
+                case 3 -> menuConsultar(gerenciador);
+                case 4 -> comprarMateriaPrima(gerenciador);
+                case 5 -> menuEstrategia(gerenciador);
+                case 6 -> menuAuditoria(gerenciador);
                 case 0 -> {
                     executando = false;
                     System.out.println("\nDesligando a linha. Faça bom proveito dos PCB's!");
@@ -59,17 +62,177 @@ public class Main {
         scanner.close();
     }
 
-    private static void atualizarDemanda(GerenciadorProducao gerenciador, String tipoProduto) {
+    //Introdução e cenário
+
+    private static void exibirIntroducao(MateriaPrima mp) {
+        System.out.println("\n" + LINHA);
+        System.out.println("| " + NOME_FABRICA);
+        System.out.println("| " + LEMA);
+        System.out.println(LINHA + "\n");
+        System.out.println("Matéria-prima principal: " + mp.getNome());
+        System.out.println("Produto fabricado: Placas de circuito impresso (PCB's)");
+        System.out.println("Desenvolvido pelos bilionários: " + DUPLA);
+        System.out.println("Linha de produção: Corrosora -> Embaladora -> Bancada de Teste");
+    }
+
+    private static Cenario escolherCenario() {
+        while (true) {
+            System.out.println("\n" + DIVISORIA);
+            System.out.println("ESCOLHA O CENÁRIO DE OPERAÇÃO");
+            System.out.println(DIVISORIA);
+            System.out.println("1 - " + Cenario.IDEAL.getNome() + " (budget farto, poucas falhas)");
+            System.out.println("2 - " + Cenario.APOCALIPTICO.getNome() + " (budget curto, máquinas quebrando)");
+            int opcao = lerInteiro("ESCOLHA: ");
+            if (opcao == 1) return Cenario.IDEAL;
+            if (opcao == 2) return Cenario.APOCALIPTICO;
+            System.out.println("Opção inválida.");
+        }
+    }
+
+    //Cabeçalho
+
+    private static void exibirCabecalho(GerenciadorProducao g) {
+        System.out.println("\n" + LINHA);
+        System.out.println("| [" + NOME_FABRICA + "]");
+        System.out.println("| ESTRATEGIA ATUAL: [" + g.getEstrategiaAtual().getNomeEstrategia() + "]");
+        System.out.println("| CENARIO ATIVO: [" + g.getCenario().getNome() + "]");
+        System.out.printf("| BUDGET ATUAL: R$ %.2f%n", g.getBudget());
+        System.out.println(LINHA);
+    }
+
+    private static void exibirTituloSubmenu(String titulo) {
+        System.out.println("\n" + DIVISORIA);
+        System.out.println("[" + titulo + "]");
+        System.out.println(DIVISORIA);
+    }
+
+    //Submenus
+
+    private static void menuDemandas(GerenciadorProducao g) {
+        boolean voltar = false;
+        while (!voltar) {
+            exibirTituloSubmenu("DEMANDAS");
+            System.out.println("1 - Atualizar demanda de " + PLACA_SIMPLES);
+            System.out.println("2 - Atualizar demanda de " + PLACA_DUPLA);
+            System.out.println("3 - Atualizar demanda de " + PLACA_MULTI);
+            System.out.println("4 - Listar demandas");
+            System.out.println("0 - Voltar");
+            int opcao = lerInteiro("ESCOLHA: ");
+
+            switch (opcao) {
+                case 1 -> atualizarDemanda(g, PLACA_SIMPLES);
+                case 2 -> atualizarDemanda(g, PLACA_DUPLA);
+                case 3 -> atualizarDemanda(g, PLACA_MULTI);
+                case 4 -> g.listarDemandas();
+                case 0 -> voltar = true;
+                default -> System.out.println("Opção inexistente.");
+            }
+        }
+    }
+
+    private static void menuFabricacao(GerenciadorProducao g) {
+        boolean voltar = false;
+        while (!voltar) {
+            exibirTituloSubmenu("FABRICAÇÃO");
+            System.out.println("1 - Processar próxima demanda (usa a estratégia ativa)");
+            System.out.println("2 - Fabricar " + PLACA_SIMPLES);
+            System.out.println("3 - Fabricar " + PLACA_DUPLA);
+            System.out.println("4 - Fabricar " + PLACA_MULTI);
+            System.out.println("0 - Voltar");
+            int opcao = lerInteiro("ESCOLHA: ");
+
+            switch (opcao) {
+                case 1 -> g.executarProximaProducao();
+                case 2 -> g.fabricarDemanda(PLACA_SIMPLES);
+                case 3 -> g.fabricarDemanda(PLACA_DUPLA);
+                case 4 -> g.fabricarDemanda(PLACA_MULTI);
+                case 0 -> voltar = true;
+                default -> System.out.println("Opção inexistente.");
+            }
+        }
+    }
+
+    private static void menuConsultar(GerenciadorProducao g) {
+        boolean voltar = false;
+        while (!voltar) {
+            exibirTituloSubmenu("CONSULTAR");
+            System.out.println("1 - Ver armazém (produtos acabados)");
+            System.out.println("2 - Ver estoque de matéria-prima");
+            System.out.println("3 - Ver budget");
+            System.out.println("0 - Voltar");
+            int opcao = lerInteiro("ESCOLHA: ");
+
+            switch (opcao) {
+                case 1 -> g.exibirArmazem();
+                case 2 -> g.exibirEstoqueMateriaPrima();
+                case 3 -> g.exibirBudget();
+                case 0 -> voltar = true;
+                default -> System.out.println("Opção inexistente.");
+            }
+        }
+    }
+
+    private static void menuEstrategia(GerenciadorProducao g) {
+        boolean voltar = false;
+        while (!voltar) {
+            exibirTituloSubmenu("GERENCIAR ESTRATÉGIA");
+            System.out.println("Ativa agora: " + g.getEstrategiaAtual().getNomeEstrategia());
+            System.out.println("1 - Ordem de Chegada");
+            System.out.println("2 - Maior Demanda");
+            System.out.println("3 - Maximizar Produção");
+            System.out.println("0 - Voltar");
+            int opcao = lerInteiro("ESCOLHA: ");
+
+            switch (opcao) {
+                case 1 -> g.setEstrategia(new EstrategiaOrdemChegada());
+                case 2 -> g.setEstrategia(new EstrategiaMaiorDemanda());
+                case 3 -> g.setEstrategia(new EstrategiaMaximoProdutos());
+                case 0 -> voltar = true;
+                default -> System.out.println("Opção inexistente.");
+            }
+        }
+    }
+
+    private static void menuAuditoria(GerenciadorProducao g) {
+        boolean voltar = false;
+        while (!voltar) {
+            exibirTituloSubmenu("AUDITORIA E MANUTENÇÃO");
+            System.out.println("1 - Relatório geral (máquinas e produtos)");
+            System.out.println("2 - Detalhar máquinas");
+            System.out.println("3 - Reparar máquina");
+            System.out.println("0 - Voltar");
+            int opcao = lerInteiro("ESCOLHA: ");
+
+            switch (opcao) {
+                case 1 -> g.gerarAuditoriaGeral();
+                case 2 -> g.exibirMaquinas();
+                case 3 -> repararMaquina(g);
+                case 0 -> voltar = true;
+                default -> System.out.println("Opção inexistente.");
+            }
+        }
+    }
+
+    //Ações 
+
+    private static void atualizarDemanda(GerenciadorProducao g, String tipoProduto) {
         int quantidade = lerInteiro("Quantas unidades de " + tipoProduto + "? ");
         if (quantidade <= 0) {
             System.out.println("A quantidade precisa ser maior que zero.");
             return;
         }
-        gerenciador.registrarDemanda(tipoProduto, quantidade);
+        g.registrarDemanda(tipoProduto, quantidade);
     }
 
-    private static void comprarMateriaPrima(GerenciadorProducao gerenciador) {
-        System.out.println("\n*** COMPRA DE MATÉRIA-PRIMA ***");
+    private static void repararMaquina(GerenciadorProducao g) {
+        g.exibirMaquinas();
+        int numero = lerInteiro("Qual máquina reparar (0 para voltar)? ");
+        if (numero == 0) return;
+        g.repararMaquina(numero - 1);
+    }
+
+    private static void comprarMateriaPrima(GerenciadorProducao g) {
+        exibirTituloSubmenu("COMPRA DE MATÉRIA-PRIMA");
         System.out.println("1 - Laminado");
         System.out.println("2 - ESD (embalagem)");
         System.out.println("3 - Cera (selo)");
@@ -93,46 +256,10 @@ public class Main {
             System.out.println("Informe um valor maior que zero.");
             return;
         }
-        gerenciador.comprarMateriaPrima(nome, qtd);
+        g.comprarMateriaPrima(nome, qtd);
     }
 
-    private static void exibirIntroducao(MateriaPrima mp, GerenciadorProducao gerenciador) {
-        System.out.println("\n*-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
-        System.out.println(NOME_FABRICA);
-        System.out.println(LEMA);
-        System.out.println("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n");
-        System.out.println("Matéria-prima principal: " + mp.getNome());
-        System.out.println("Produto fabricado: Placas de circuito impresso (PCB's)");
-        System.out.println("Desenvolvido pelos bilionários: " + DUPLA);
-        System.out.println("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n");
-        System.out.println("Linha de produção: Corrosora -> Embaladora -> Bancada de Teste");
-        System.out.println("\nCatálogo (custo de operação por placa: R$" + String.format("%.2f", gerenciador.consultarCustoOperacao()) + "):");
-        System.out.println("  " + PLACA_SIMPLES + " - qualidade 0.5 | consome " + DEMANDA_SIMPLES + " dm2 de laminado");
-        System.out.println("  " + PLACA_DUPLA + " - qualidade 0.7 | consome " + DEMANDA_DUPLA + " dm2 de laminado");
-        System.out.println("  " + PLACA_MULTI + " - qualidade 0.9 | consome " + DEMANDA_MULTI + " dm2 de laminado");
-        System.out.println("\nAtenção: quanto maior a qualidade, mais rigorosa é a inspeção!");
-    }
-
-    private static void exibirMenu(double budget) {
-        System.out.println("\n*-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
-        System.out.println(NOME_FABRICA);
-        System.out.printf("BUDGET ATUAL: R$%.2f%n", budget);
-        System.out.println("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n");
-        System.out.println("ATUALIZAR DEMANDAS");
-        System.out.println("1 - Atualizar demanda de " + PLACA_SIMPLES);
-        System.out.println("2 - Atualizar demanda de " + PLACA_DUPLA);
-        System.out.println("3 - Atualizar demanda de " + PLACA_MULTI);
-        System.out.println("\nFABRICAR");
-        System.out.println("4 - Fabricar " + PLACA_SIMPLES);
-        System.out.println("5 - Fabricar " + PLACA_DUPLA);
-        System.out.println("6 - Fabricar " + PLACA_MULTI);
-        System.out.println("\nCONSULTAR");
-        System.out.println("7 - Ver armazém");
-        System.out.println("8 - Ver estoque de matéria-prima");
-        System.out.println("\nCOMPRAR MATÉRIA-PRIMA");
-        System.out.println("9 - Comprar matéria-prima");
-        System.out.println("\n0 - SAIR");
-    }
+    //Leitura 
 
     private static int lerInteiro(String mensagem) {
         while (true) {

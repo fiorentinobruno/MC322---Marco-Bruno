@@ -26,22 +26,16 @@ public class EstacaoInspecao extends Maquina {
 
         if (verificarFalha()) {
             desligar();
-            System.out.println("Falha técnica na " + getNome() + "! O processamento de " + produto.getId() + " foi interrompido.");
+            System.out.println("Falha técnica na " + getNome() + "! Inspeção de " + produto.getId() + " não pôde ser concluída.");
             return;
         }
 
-        if (verificarFalha()) {
-            desligar();
-            System.out.println("Falha técnica na " + getNome() + "! Inspeção de " + produto.getId() + " não pôde ser concluída. Máquina desligada.");
-            return;
-        }
-
-        if (mp.getQuantidade() < quantidadeSeloPorInspecao) {
+        if (!mp.verificarDisponibilidade(quantidadeSeloPorInspecao)) {
             System.out.println("Não há " + mp.getNome() + " suficiente para selar a inspeção.");
             return;
         }
 
-        aplicarDesgaste(1.0);
+        aplicarDesgaste();
 
         mp.consumir(quantidadeSeloPorInspecao);
 

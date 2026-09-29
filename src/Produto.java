@@ -8,6 +8,7 @@ public abstract class Produto implements Auditavel{
     private double qualidade;
     private double probabilidadeFalhaAcumulada;
     private static int totalProdutosFabricados;
+    private String lote;
 
     public Produto(String id, String nome, double quantidadeMateriaPrimaNecessaria, double qualidade) {
         this.id = id;
@@ -16,15 +17,14 @@ public abstract class Produto implements Auditavel{
         this.quantidadeMateriaPrimaNecessaria = quantidadeMateriaPrimaNecessaria;
         this.qualidade = qualidade;
         totalProdutosFabricados++;
+        this.lote = "-";
     }
 
     public abstract void processar(String idMateriaPrima);
     public abstract double calcularTempoProducao();
     public abstract String getTipo();
 
-    public void definirDemandaMateriaPrima(double demanda) {
-        this.quantidadeMateriaPrimaNecessaria = demanda;
-    }
+    
 
     public double getDemandaMateriaPrima() {
         return quantidadeMateriaPrimaNecessaria;
@@ -42,16 +42,16 @@ public abstract class Produto implements Auditavel{
         return status;
     }
 
+    public String getLote() { 
+        return lote; 
+    }  
+
     public void aprovar() {
         this.status = "inspecionado";
     }
 
     public String getMateriaPrimaUsada() {
         return materiaPrimaUsada;
-    }
-
-    public void setMateriaPrimaUsada(String idMateriaPrima) {
-        materiaPrimaUsada = idMateriaPrima;
     }
 
     public double getQualidade() {
@@ -62,21 +62,35 @@ public abstract class Produto implements Auditavel{
         return probabilidadeFalhaAcumulada;
     }
 
-    public void aumentarProbabilidadeFalha(double incremento){
-        probabilidadeFalhaAcumulada += incremento;
-    }
-
     public double getQuantidadeMateriaPrimaPorUnidade(){
         return quantidadeMateriaPrimaNecessaria;
+    }
+
+    public static int getTotalProdutosFabricados(){
+        return totalProdutosFabricados;
+    }
+
+    public void setMateriaPrimaUsada(String idMateriaPrima) {
+        materiaPrimaUsada = idMateriaPrima;
+    }
+    
+    public void definirDemandaMateriaPrima(double demanda) {
+        this.quantidadeMateriaPrimaNecessaria = demanda;
+    }
+
+    public void aumentarProbabilidadeFalha(double incremento){
+        probabilidadeFalhaAcumulada += incremento;
     }
 
     public void setStatus(String newstatus){
         status = newstatus;
     }
 
-    public static int getTotalProdutosFabricados(){
-        return totalProdutosFabricados;
+    public void setLote(String lote) { 
+        this.lote = lote; 
     }
+
+    
 
     @Override
     public boolean precisaManutencao() {

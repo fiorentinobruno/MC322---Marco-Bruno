@@ -2,16 +2,27 @@ public class Demanda {
     private String tipoProduto;
     private int quantidadeProdutos;
     private StatusDemanda status;
+    private final double custoUnitarioEstimado;
 
-    public Demanda(String tipoProduto, int quantidadeProdutos) {
+
+    public Demanda(String tipoProduto, int quantidadeProdutos, double custoUnitarioEstimado) {
         this.tipoProduto = tipoProduto;
         this.quantidadeProdutos = quantidadeProdutos;
-        status = StatusDemanda.PENDENTE;
+        this.custoUnitarioEstimado = custoUnitarioEstimado;
+        this.status = StatusDemanda.PENDENTE;
     }
 
-    public void atualizarQuantidade(int quantidadeAdicional) {
-        this.quantidadeProdutos += quantidadeAdicional;
-        status = StatusDemanda.PENDENTE;
+    public boolean atualizarQuantidade(int quantidadeAdicional) {
+        if (status == StatusDemanda.CANCELADA) {
+            return false;
+        }
+        quantidadeProdutos += quantidadeAdicional;
+
+        if (status == StatusDemanda.CONCLUIDA){
+           status = StatusDemanda.PENDENTE;  
+        } 
+
+        return true;
     }
 
     public double calcularMateriaPrimaNecessaria(double demandaMateriaPrimaPorUnidade) {
@@ -19,33 +30,35 @@ public class Demanda {
     }
 
     public void registrarProducao(int unidadesFabricadas) {
-        this.quantidadeProdutos -= unidadesFabricadas;
-        if (this.quantidadeProdutos <= 0) {
-            this.quantidadeProdutos = 0;
+        if (status != StatusDemanda.PENDENTE && status != StatusDemanda.EM_PRODUCAO) return;
+        quantidadeProdutos -= unidadesFabricadas;
+        if (quantidadeProdutos <= 0) {
+            quantidadeProdutos = 0;
             atender();
-
         }
     }
 
     public boolean atender() {
         if (status == StatusDemanda.CANCELADA){
-             return false; 
-        }
+            return false;
+        } 
         status = StatusDemanda.CONCLUIDA;
         return true;
     }
 
-    public void iniciarProducao(){
-        if (status == StatusDemanda.PENDENTE)
-       status = StatusDemanda.EM_PRODUCAO;
+    public void iniciarProducao() {
+        if (status == StatusDemanda.PENDENTE) {
+            status = StatusDemanda.EM_PRODUCAO;
+        }
     }
 
-    public void cancelar(){
+    public boolean cancelar() {
+        if (status == StatusDemanda.CONCLUIDA) {
+           return false; 
+        }
         status = StatusDemanda.CANCELADA;
-
+        return true;
     }
-
-     
 
     public String getTipoProduto() {
         return tipoProduto;
@@ -58,4 +71,17 @@ public class Demanda {
     public StatusDemanda getStatus() {
         return status;
     }
+
+    public double getCustoTotalEstimado() {
+        return quantidadeProdutos * custoUnitarioEstimado;
+    }
+
+    public boolean ehViavel(double orcamento) {
+        return custoUnitarioEstimado > 0 && custoUnitarioEstimado <= orcamento;
+    }
+
+    public double getCustoUnitarioEstimado() { 
+        return custoUnitarioEstimado; 
+    }
+
 }
