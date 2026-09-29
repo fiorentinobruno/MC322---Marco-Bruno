@@ -32,4 +32,46 @@ Qualidade x Inspeção:
 Placas de maior qualidade passam por critério de inspeção mais rigoroso (maior
 chance de rejeição), conforme pedido no enunciado.
 
+ TAREFA 3
+----------------------------------------------------------------------
+ 
+Strategy (EstrategiaProducao):
+O GerenciadorProducao guarda uma estrategiaAtual e só conhece a interface, nunca as
+classes concretas. As estrategias sao criadas na Main e trocadas em tempo de execucao
+pelo menu (setEstrategia). Adaptamos os criterios ao tema:
+- EstrategiaOrdemChegada ("Ordem de Chegada"): atende a primeira demanda da fila que esteja elegivel.
+- EstrategiaMaiorDemanda ("Maior Demanda"): atende a demanda com mais placas pendentes.
+- EstrategiaMaximoProdutos ("Maximizar Producao"): escolhe a demanda que rende mais placas dentro do budget.
+O filtro comum (status valido, quantidade > 0 e budget suficiente) ficou em um metodo
+default da interface (ehElegivel) para nao repetir codigo nas tres estrategias.
+ 
+Enum StatusDemanda:
+A Demanda usa PENDENTE, EM_PRODUCAO, CONCLUIDA e CANCELADA no lugar do boolean. As
+transicoes sao protegidas: demanda cancelada nao pode ser concluida nem alterada, e
+demanda concluida nao pode ser cancelada. A demanda vira CANCELADA quando falta budget
+para fabricar. Tambem guarda o custo unitario estimado, usado para saber se ela e viavel.
+ 
+Interface Auditavel:
+Maquina e Produto (hierarquias diferentes) implementam Auditavel. A auditoria geral do
+Gerenciador percorre uma lista de Auditavel com maquinas e produtos juntos, usando
+polimorfismo, e mostra se cada item precisa de manutencao ou descarte.
+ 
+Cenarios (enum Cenario):
+- Ideal: budget de R$ 6000, desgaste e falha normais.
+- Apocaliptico: budget de R$ 2000, desgaste 1.5x e falha 1.4x maiores.
+O cenario e escolhido no comeco e aplicado a todas as maquinas.
+ 
+Desgaste das maquinas:
+Cada uso reduz a saude da maquina de forma aleatoria (multiplicada pelo cenario). Quanto
+menor a saude, maior a chance de falha. Com saude 0 a maquina quebra e nao liga ate ser
+reparada. O reparo custa o custoReparo de cada maquina e sai do budget. Abaixo de 30 de
+saude a maquina "precisa de manutencao".
+ 
+Armazem:
+Mostra os produtos acabados agrupados por tipo, com quantidade, qualidade, lote e risco.
+Cada placa recebe um lote quando entra em producao. E separado do estoque de materia-prima.
+ 
+Menu:
+Menu principal com o cabecalho (estrategia, cenario e budget) e submenus de Demandas,
+Fabricacao, Consultar, Estrategia e Auditoria/Manutencao, alem da compra de materia-prima.
  

@@ -1,5 +1,3 @@
-// Classe herdada da Tarefa 1. Mantida no projeto para manter a evolução da planta,
-// mas não integrada ao fluxo atual.
 
 public class Esteira {
     private Object item;
