@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class GerenciadorProducao {
 
@@ -16,11 +18,13 @@ public class GerenciadorProducao {
     private Embaladora embaladora;
     private EstacaoInspecao estacaoInspecao;
 
+    private EstrategiaProducao estrategia;
+
     private double budget;
 
     public GerenciadorProducao(MateriaPrima materiaPrimaPrincipal, MateriaPrima materiaPrimaEmbalagem,
-                                MateriaPrima materiaPrimaSelo, Corrosora corrosora, Embaladora embaladora,
-                                EstacaoInspecao estacaoInspecao, double budget) {
+                               MateriaPrima materiaPrimaSelo, Corrosora corrosora, Embaladora embaladora,
+                               EstacaoInspecao estacaoInspecao, double budget) {
         this.demandas = new ArrayList<>();
         this.produtosFabricados = new ArrayList<>();
         this.maquinas = new ArrayList<>();
@@ -36,10 +40,17 @@ public class GerenciadorProducao {
         this.embaladora = embaladora;
         this.estacaoInspecao = estacaoInspecao;
 
+        this.estrategia = new EstrategiaOrdemChegada();
         this.budget = budget;
     }
 
     public void registrarDemanda(String tipoProduto, int quantidade) {
+        if (quantidade <= 0) {
+            throw new DemandaInvalidaException(
+                    "A quantidade pedida precisa ser maior que zero (recebido: " + quantidade + ").");
+        }
+        exigirTipoConhecido(tipoProduto);
+
         Demanda demanda = buscarDemanda(tipoProduto);
         if (demanda == null) {
             demanda = new Demanda(tipoProduto, quantidade);
@@ -52,38 +63,45 @@ public class GerenciadorProducao {
         }
     }
 
-    public void atualizarDemanda(String tipoProduto, int quantidadeAdicional) {
+    public void fabricarDemanda(String tipoProduto) {
+        exigirTipoConhecido(tipoProduto);
+
         Demanda demanda = buscarDemanda(tipoProduto);
         if (demanda == null) {
-            System.out.println("Não existe demanda registrada para " + tipoProduto + ". Registrando nova.");
-            registrarDemanda(tipoProduto, quantidadeAdicional);
-            return;
+            throw new DemandaInvalidaException(
+                    "Não existe demanda registrada para " + tipoProduto
+                    + ". Registre a demanda antes de mandar fabricar.");
         }
-        demanda.atualizarQuantidade(quantidadeAdicional);
-        System.out.println("Demanda de " + tipoProduto + " atualizada. Pendente: "
-                + demanda.getQuantidadeProdutos() + " unidade(s).");
+        if (!demanda.estaProduzivel()) {
+            throw new DemandaInvalidaException(
+                    "A demanda de " + tipoProduto + " não está produzível (saldo: "
+                    + demanda.getQuantidadeProdutos() + ", situação: "
+                    + demanda.getStatus().getDescricao() + ").");
+        }
+
+        executarCiclo(demanda);
     }
 
-    public void fabricarDemanda(String tipoProduto) {
-        Demanda demanda = buscarDemanda(tipoProduto);
-        if (demanda == null || demanda.getQuantidadeProdutos() <= 0) {
-            System.out.println("Não há demanda pendente para " + tipoProduto + ".");
-            return;
+    public void fabricarProximaDemanda() {
+        Demanda escolhida = estrategia.selecionarDemanda(Collections.unmodifiableList(demandas), budget);
+        if (escolhida == null) {
+            throw new DemandaInvalidaException(
+                    "A estratégia \"" + estrategia.getNomeEstrategia()
+                    + "\" não encontrou demanda elegível. Registre uma demanda ou verifique o orçamento.");
         }
+        System.out.println("\nEstratégia \"" + estrategia.getNomeEstrategia()
+                + "\" escolheu: " + escolhida.getTipoProduto()
+                + " (" + escolhida.getQuantidadeProdutos() + " pendente(s))");
+        executarCiclo(escolhida);
+    }
 
+    private void executarCiclo(Demanda demanda) {
+        String tipoProduto = demanda.getTipoProduto();
         Produto produto = criarProduto(tipoProduto);
-        if (produto == null) {
-            System.out.println("Tipo de produto desconhecido: " + tipoProduto);
-            return;
-        }
 
-        double custoEstimado = calcularCustoProducao(produto);
-        if (custoEstimado > budget) {
-            System.out.println("Budget insuficiente para fabricar " + tipoProduto
-                    + ". Custo estimado: R$" + String.format("%.2f", custoEstimado)
-                    + " | Budget atual: R$" + String.format("%.2f", budget));
-            return;
-        }
+        validarRecursos(produto);
+
+        demanda.iniciarProducao();
 
         corrosora.ligar();
         embaladora.ligar();
@@ -91,54 +109,110 @@ public class GerenciadorProducao {
 
         System.out.println("\n--- Iniciando produção de " + tipoProduto + " ---");
         System.out.println("[OK] Linha ligada: " + corrosora.getNome() + ", "
-        + embaladora.getNome() + ", " + estacaoInspecao.getNome());
-        
-        corrosora.processar(materiaPrimaPrincipal, produto);
-        if (!produto.getStatus().equals("processado")) {
-            System.out.println("Produção interrompida na corrosão.");
+                + embaladora.getNome() + ", " + estacaoInspecao.getNome());
+
+        try {
+            corrosora.processar(materiaPrimaPrincipal, produto);
+            budget -= corrosora.getCustoOperacao();
+
+            embaladora.processar(materiaPrimaEmbalagem, produto);
+            budget -= embaladora.getCustoOperacao();
+
+            estacaoInspecao.processar(materiaPrimaSelo, produto);
+            budget -= estacaoInspecao.getCustoOperacao();
+        } finally {
             desligarMaquinas();
-            return;
         }
-        budget -= corrosora.getCustoOperacao();
 
-        embaladora.processar(materiaPrimaEmbalagem, produto);
-        budget -= embaladora.getCustoOperacao();
-
-        estacaoInspecao.processar(materiaPrimaSelo, produto);
-        budget -= estacaoInspecao.getCustoOperacao();
-
-        desligarMaquinas();
+        produtosFabricados.add(produto);
 
         if (produto.getStatus().equals("inspecionado")) {
-            produtosFabricados.add(produto);
             demanda.registrarProducao(1);
-            System.out.println("[OK] " + produto.getId() + " (" + produto.getTipo() + ") fabricado e aprovado!");
+            System.out.println("[OK] " + produto.getId() + " (" + produto.getTipo()
+                    + ") fabricado e aprovado!");
+            if (demanda.getStatus() == StatusDemanda.CONCLUIDA) {
+                System.out.println("[OK] Demanda de " + tipoProduto + " concluída.");
+            }
         } else {
             System.out.println("[FALHA] " + produto.getId() + " (" + produto.getTipo()
-                    + ") não passou na inspeção. Status final: " + produto.getStatus());
+                    + ") não passou na inspeção e foi para o armazém como refugo. "
+                    + "A demanda continua pendente.");
         }
     }
 
+    private void validarRecursos(Produto produto) {
+        double custoCiclo = consultarCustoOperacao();
+        if (custoCiclo > budget) {
+            throw new RecursoInsuficienteException(
+                    "Orçamento insuficiente para o ciclo de " + produto.getTipo()
+                    + ". Custo: R$" + String.format("%.2f", custoCiclo)
+                    + " | Disponível: R$" + String.format("%.2f", budget) + ".");
+        }
+        materiaPrimaPrincipal.exigirDisponibilidade(produto.getQuantidadeMateriaPrimaPorUnidade());
+        materiaPrimaEmbalagem.exigirDisponibilidade(embaladora.getQuantidadeEsdBagPorEmbalagem());
+        materiaPrimaSelo.exigirDisponibilidade(estacaoInspecao.getQuantidadeSeloPorInspecao());
+    }
+
     public void comprarMateriaPrima(String qual, double quantidade) {
+        if (quantidade <= 0) {
+            throw new DemandaInvalidaException(
+                    "A quantidade comprada precisa ser maior que zero.");
+        }
         MateriaPrima mp = escolherMateriaPrima(qual);
         if (mp == null) {
-            System.out.println("Matéria-prima desconhecida: " + qual);
-            return;
+            throw new DemandaInvalidaException("Matéria-prima desconhecida: " + qual + ".");
         }
         double custoTotal = quantidade * mp.getCustoPorUnidade();
         if (custoTotal > budget) {
-            System.out.println("Budget insuficiente para comprar " + quantidade + " " + mp.getUnidade()
-                    + " de " + mp.getNome() + ".");
-            return;
+            throw new RecursoInsuficienteException(
+                    "Orçamento insuficiente para comprar " + String.format("%.1f", quantidade)
+                    + " " + mp.getUnidade() + " de " + mp.getNome()
+                    + ". Custo: R$" + String.format("%.2f", custoTotal)
+                    + " | Disponível: R$" + String.format("%.2f", budget) + ".");
         }
         mp.adicionarEstoque(quantidade);
         budget -= custoTotal;
-        System.out.println("[OK] Compradas " + quantidade + " " + mp.getUnidade() + " de " + mp.getNome()
+        System.out.println("[OK] Compradas " + String.format("%.1f", quantidade) + " "
+                + mp.getUnidade() + " de " + mp.getNome()
                 + " por R$" + String.format("%.2f", custoTotal));
+    }
+
+    public void cancelarDemanda(String tipoProduto) {
+        Demanda demanda = buscarDemanda(tipoProduto);
+        if (demanda == null) {
+            throw new DemandaInvalidaException(
+                    "Não existe demanda registrada para " + tipoProduto + ".");
+        }
+        demanda.cancelar();
+        System.out.println("[OK] Demanda de " + tipoProduto + " cancelada.");
+    }
+
+    public void definirEstrategia(EstrategiaProducao estrategia) {
+        if (estrategia == null) {
+            throw new DemandaInvalidaException("Estratégia de produção inválida.");
+        }
+        this.estrategia = estrategia;
+        System.out.println("[OK] Estratégia de produção agora é: " + estrategia.getNomeEstrategia());
+    }
+
+    public String getNomeEstrategia() {
+        return estrategia.getNomeEstrategia();
     }
 
     public void exibirBudget() {
         System.out.println("\nBUDGET ATUAL: R$" + String.format("%.2f", budget));
+    }
+
+    public void exibirDemandas() {
+        System.out.println("\n*** DEMANDAS ***");
+        if (demandas.isEmpty()) {
+            System.out.println("Nenhuma demanda registrada ainda.");
+            return;
+        }
+        for (Demanda d : demandas) {
+            System.out.println(" - " + d.getTipoProduto() + " | Pendente: "
+                    + d.getQuantidadeProdutos() + " | Situação: " + d.getStatus().getDescricao());
+        }
     }
 
     public void exibirArmazem() {
@@ -149,25 +223,24 @@ public class GerenciadorProducao {
         }
         for (Produto p : produtosFabricados) {
             System.out.println(" - " + p.getId() + " | Tipo: " + p.getTipo()
-                    + " | Status: " + p.getStatus());
+                    + " | Status: " + p.getStatus()
+                    + " | Laminado: " + p.getMateriaPrimaUsada());
         }
-        System.out.println("Total fabricado (histórico): " + Produto.getTotalProdutosFabricados());
+        System.out.println("Total de placas instanciadas (histórico): "
+                + Produto.getTotalProdutosFabricados());
     }
 
     public void exibirEstoqueMateriaPrima() {
         System.out.println("\n*** ESTOQUE DE MATÉRIA-PRIMA ***");
-        System.out.println(materiaPrimaPrincipal.getId() + " - " + materiaPrimaPrincipal.getNome() + ": "
-                + materiaPrimaPrincipal.getQuantidade() + " " + materiaPrimaPrincipal.getUnidade());
-        System.out.println(materiaPrimaEmbalagem.getId() + " - " + materiaPrimaEmbalagem.getNome() + ": "
-                + materiaPrimaEmbalagem.getQuantidade() + " " + materiaPrimaEmbalagem.getUnidade());
-        System.out.println(materiaPrimaSelo.getId() + " - " + materiaPrimaSelo.getNome() + ": "
-                + materiaPrimaSelo.getQuantidade() + " " + materiaPrimaSelo.getUnidade());
+        exibirLinhaEstoque(materiaPrimaPrincipal);
+        exibirLinhaEstoque(materiaPrimaEmbalagem);
+        exibirLinhaEstoque(materiaPrimaSelo);
     }
 
-    private double calcularCustoProducao(Produto produto) {
-        return corrosora.getCustoOperacao()
-                + embaladora.getCustoOperacao()
-                + estacaoInspecao.getCustoOperacao();
+    private void exibirLinhaEstoque(MateriaPrima mp) {
+        String alerta = mp.getQuantidade() < mp.getQuantidadeMinima() ? "  <= ABAIXO DA RESERVA" : "";
+        System.out.println(mp.getId() + " - " + mp.getNome() + ": "
+                + String.format("%.1f", mp.getQuantidade()) + " " + mp.getUnidade() + alerta);
     }
 
     private Demanda buscarDemanda(String tipoProduto) {
@@ -177,6 +250,14 @@ public class GerenciadorProducao {
             }
         }
         return null;
+    }
+
+    private void exigirTipoConhecido(String tipoProduto) {
+        if (criarProdutoOuNulo(tipoProduto, false) == null) {
+            throw new DemandaInvalidaException(
+                    "Tipo de placa desconhecido: " + tipoProduto
+                    + ". O catálogo tem Placa Simples, Placa Dupla e Placa Multi-camada.");
+        }
     }
 
     private MateriaPrima escolherMateriaPrima(String qual) {
@@ -195,8 +276,15 @@ public class GerenciadorProducao {
     }
 
     private Produto criarProduto(String tipoProduto) {
-        contadorPlacas++;
-        String id = "PCB-" + contadorPlacas;
+        Produto produto = criarProdutoOuNulo(tipoProduto, true);
+        if (produto == null) {
+            throw new DemandaInvalidaException("Tipo de placa desconhecido: " + tipoProduto + ".");
+        }
+        return produto;
+    }
+
+    private Produto criarProdutoOuNulo(String tipoProduto, boolean consumirIdentificador) {
+        String id = "PCB-" + (consumirIdentificador ? ++contadorPlacas : contadorPlacas);
         switch (tipoProduto.toLowerCase()) {
             case "placa simples":
                 return new PlacaSimples(id, "Placa Simples", 4.0);
@@ -212,6 +300,10 @@ public class GerenciadorProducao {
 
     public double getBudget() {
         return budget;
+    }
+
+    public List<Maquina> getMaquinas() {
+        return Collections.unmodifiableList(maquinas);
     }
 
     private void desligarMaquinas() {

@@ -1,7 +1,5 @@
-// Classe herdada da Tarefa 1. Mantida no projeto para manter a evolução da planta,
-// mas não integrada ao fluxo atual.
-
 public class Esteira {
+
     private Object item;
     private boolean emMovimento;
     private double capacidadeMaxima;
@@ -23,17 +21,14 @@ public class Esteira {
             System.out.println("A esteira não está em movimento. Item não transportado.");
             return false;
         }
-
         if (item != null) {
             System.out.println("A esteira já contém um item.");
             return false;
         }
-
         if (!verificarCapacidade(quantidade)) {
             System.out.println("Excede a capacidade máxima da esteira");
             return false;
         }
-
         item = novoItem;
         return true;
     }

@@ -1,5 +1,5 @@
-
 public abstract class Produto {
+
     private String id;
     private String nome;
     private String status;
@@ -19,7 +19,9 @@ public abstract class Produto {
     }
 
     public abstract void processar(String idMateriaPrima);
+
     public abstract double calcularTempoProducao();
+
     public abstract String getTipo();
 
     public void definirDemandaMateriaPrima(double demanda) {
@@ -58,23 +60,23 @@ public abstract class Produto {
         return qualidade;
     }
 
-    public double getProbabilidadeFalhaAcumulada(){
+    public double getProbabilidadeFalhaAcumulada() {
         return probabilidadeFalhaAcumulada;
     }
 
-    public void aumentarProbabilidadeFalha(double incremento){
+    public void aumentarProbabilidadeFalha(double incremento) {
         probabilidadeFalhaAcumulada += incremento;
     }
 
-    public double getQuantidadeMateriaPrimaPorUnidade(){
+    public double getQuantidadeMateriaPrimaPorUnidade() {
         return quantidadeMateriaPrimaNecessaria;
     }
 
-    public void setStatus(String newstatus){
+    public void setStatus(String newstatus) {
         status = newstatus;
     }
 
-    public static int getTotalProdutosFabricados(){
+    public static int getTotalProdutosFabricados() {
         return totalProdutosFabricados;
     }
 }

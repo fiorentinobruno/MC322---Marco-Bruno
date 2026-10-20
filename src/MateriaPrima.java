@@ -1,5 +1,5 @@
-
 public class MateriaPrima {
+
     private String id;
     private String nome;
     private double quantidade;
@@ -7,19 +7,35 @@ public class MateriaPrima {
     private double quantidadeMinima;
     private double custoPorUnidade;
 
-    public MateriaPrima(String id, String nome, double quantidade, String unidade, double quantidadeMinima, double custoPorUnidade) {
+    public MateriaPrima(String id, String nome, double quantidade, String unidade,
+                        double quantidadeMinima, double custoPorUnidade) {
         this.id = id;
         this.nome = nome;
         this.quantidade = quantidade;
         this.unidade = unidade;
         this.quantidadeMinima = quantidadeMinima;
         this.custoPorUnidade = custoPorUnidade;
-
     }
 
     public boolean verificarDisponibilidade(double consumido) {
         return quantidade >= consumido && quantidade >= quantidadeMinima;
+    }
 
+    public void exigirDisponibilidade(double consumido) {
+        if (quantidade < consumido) {
+            throw new RecursoInsuficienteException(
+                    "Estoque insuficiente de " + nome + ". Necessário: "
+                    + String.format("%.1f", consumido) + " " + unidade
+                    + " | Disponível: " + String.format("%.1f", quantidade) + " " + unidade
+                    + ". Compre mais antes de produzir.");
+        }
+        if (quantidade < quantidadeMinima) {
+            throw new RecursoInsuficienteException(
+                    "Estoque de " + nome + " está na reserva mínima ("
+                    + String.format("%.1f", quantidade) + " " + unidade + ", mínimo "
+                    + String.format("%.1f", quantidadeMinima) + " " + unidade
+                    + "). Reponha o estoque antes de produzir.");
+        }
     }
 
     public void adicionarEstoque(double adicionado) {
@@ -46,8 +62,11 @@ public class MateriaPrima {
         return unidade;
     }
 
-    public double getCustoPorUnidade(){
+    public double getQuantidadeMinima() {
+        return quantidadeMinima;
+    }
+
+    public double getCustoPorUnidade() {
         return custoPorUnidade;
     }
-    
 }

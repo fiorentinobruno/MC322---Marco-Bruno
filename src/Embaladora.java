@@ -1,12 +1,14 @@
 import java.util.Random;
 
 public class Embaladora extends Maquina {
+
     private double chanceAumentarFalha;
     private double quantidadeEsdBagPorEmbalagem;
     private Random random;
 
-    public Embaladora(String nome, double capacidadeMax, double custoOperacao, double chanceAumentarFalha, double quantidadeEsdBagPorEmbalagem) {
-        super(nome, capacidadeMax, 0.0, custoOperacao); 
+    public Embaladora(String nome, double capacidadeMax, double custoOperacao,
+                      double chanceAumentarFalha, double quantidadeEsdBagPorEmbalagem) {
+        super(nome, capacidadeMax, 0.0, custoOperacao);
         this.chanceAumentarFalha = chanceAumentarFalha;
         this.quantidadeEsdBagPorEmbalagem = quantidadeEsdBagPorEmbalagem;
         this.random = new Random();
@@ -19,27 +21,23 @@ public class Embaladora extends Maquina {
 
     @Override
     public void processar(MateriaPrima mp, Produto produto) {
-        if (!estaLigada()) {
-            System.out.println("A " + getNome() + " está desligada.");
-            return;
-        }
-        if (quantidadeEsdBagPorEmbalagem > getCapacidadeMax()) {
-            System.out.println("A capacidade máxima da " + getNome() + " foi ultrapassada.");
-            return;
-        }
-        if (!mp.verificarDisponibilidade(quantidadeEsdBagPorEmbalagem)) {
-            System.out.println("Não há " + mp.getNome() + " suficiente para embalar.");
-            return;
-        }
+        exigirLigada();
+        exigirCapacidade(quantidadeEsdBagPorEmbalagem);
+        mp.exigirDisponibilidade(quantidadeEsdBagPorEmbalagem);
 
         mp.consumir(quantidadeEsdBagPorEmbalagem);
         produto.setStatus("embalado");
-        System.out.println("Embalando " + produto.getNome() + " (" + produto.getId() + ") em saco antiestático...");
+        System.out.println("Embalando " + produto.getNome() + " (" + produto.getId()
+                + ") em saco antiestático...");
 
         if (random.nextDouble() < chanceAumentarFalha) {
             produto.aumentarProbabilidadeFalha(0.1);
-            System.out.println("Atenção: possível imperfeição na embalagem de " + produto.getId() + ".");
+            System.out.println("Atenção: selagem imperfeita em " + produto.getId()
+                    + ". Probabilidade de reprovação aumentada em 10%.");
         }
     }
-}
 
+    public double getQuantidadeEsdBagPorEmbalagem() {
+        return quantidadeEsdBagPorEmbalagem;
+    }
+}

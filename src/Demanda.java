@@ -1,4 +1,5 @@
 public class Demanda {
+
     private String tipoProduto;
     private int quantidadeProdutos;
     private StatusDemanda status;
@@ -10,6 +11,10 @@ public class Demanda {
     }
 
     public void atualizarQuantidade(int quantidadeAdicional) {
+        if (status == StatusDemanda.CANCELADA) {
+            throw new DemandaInvalidaException(
+                    "A demanda de " + tipoProduto + " foi cancelada e não aceita novas unidades.");
+        }
         this.quantidadeProdutos += quantidadeAdicional;
         status = StatusDemanda.PENDENTE;
     }
@@ -23,29 +28,36 @@ public class Demanda {
         if (this.quantidadeProdutos <= 0) {
             this.quantidadeProdutos = 0;
             atender();
-
         }
     }
 
     public boolean atender() {
-        if (status == StatusDemanda.CANCELADA){
-             return false; 
+        if (status == StatusDemanda.CANCELADA) {
+            return false;
         }
         status = StatusDemanda.CONCLUIDA;
         return true;
     }
 
-    public void iniciarProducao(){
-        if (status == StatusDemanda.PENDENTE)
-       status = StatusDemanda.EM_PRODUCAO;
+    public void iniciarProducao() {
+        if (status == StatusDemanda.PENDENTE) {
+            status = StatusDemanda.EM_PRODUCAO;
+        }
     }
 
-    public void cancelar(){
+    public void cancelar() {
+        if (status == StatusDemanda.CONCLUIDA) {
+            throw new DemandaInvalidaException(
+                    "A demanda de " + tipoProduto + " já foi concluída e não pode ser cancelada.");
+        }
         status = StatusDemanda.CANCELADA;
-
     }
 
-     
+    public boolean estaProduzivel() {
+        return quantidadeProdutos > 0
+                && status != StatusDemanda.CONCLUIDA
+                && status != StatusDemanda.CANCELADA;
+    }
 
     public String getTipoProduto() {
         return tipoProduto;

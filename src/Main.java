@@ -16,16 +16,17 @@ public class Main {
 
     private static final Scanner scanner = new Scanner(System.in);
 
+    private Main() {
+    }
+
     public static void main(String[] args) {
 
         MateriaPrima laminado = new MateriaPrima("MP1", "Laminado FR-4 (cobre 35 um)", 200.0, "dm2", 20.0, 5.0);
-        MateriaPrima esd      = new MateriaPrima("MP2", "Saco ESD antiestático", 100.0, "un", 10.0, 2.0);
-        MateriaPrima cera     = new MateriaPrima("MP3", "Selo de cera", 100.0, "un", 10.0, 1.0);
+        MateriaPrima esd = new MateriaPrima("MP2", "Saco ESD antiestático", 100.0, "un", 10.0, 2.0);
+        MateriaPrima cera = new MateriaPrima("MP3", "Selo de cera", 100.0, "un", 10.0, 1.0);
 
         Corrosora corrosora = new Corrosora("Corrosora CU-1", 60.0, 10.0, 0.3);
-
         Embaladora embaladora = new Embaladora("Embaladora ESD-2", 60.0, 8.0, 0.2, 1.0);
-
         EstacaoInspecao inspecao = new EstacaoInspecao("Bancada de Teste", 60.0, 12.0, 0.1, 0.3, 1.0);
 
         GerenciadorProducao gerenciador = new GerenciadorProducao(
@@ -35,37 +36,91 @@ public class Main {
 
         boolean executando = true;
         while (executando) {
-            exibirMenu(gerenciador.getBudget());
+            exibirMenu(gerenciador);
             int opcao = lerInteiro("ESCOLHA: ");
 
-            switch (opcao) {
-                case 1 -> atualizarDemanda(gerenciador, PLACA_SIMPLES);
-                case 2 -> atualizarDemanda(gerenciador, PLACA_DUPLA);
-                case 3 -> atualizarDemanda(gerenciador, PLACA_MULTI);
-                case 4 -> gerenciador.fabricarDemanda(PLACA_SIMPLES);
-                case 5 -> gerenciador.fabricarDemanda(PLACA_DUPLA);
-                case 6 -> gerenciador.fabricarDemanda(PLACA_MULTI);
-                case 7 -> gerenciador.exibirArmazem();
-                case 8 -> gerenciador.exibirEstoqueMateriaPrima();
-                case 9 -> comprarMateriaPrima(gerenciador);
-                case 0 -> {
-                    executando = false;
-                    System.out.println("\nDesligando a linha. Faça bom proveito dos PCB's!");
+            try {
+                switch (opcao) {
+                    case 1 -> registrarDemanda(gerenciador, PLACA_SIMPLES);
+                    case 2 -> registrarDemanda(gerenciador, PLACA_DUPLA);
+                    case 3 -> registrarDemanda(gerenciador, PLACA_MULTI);
+                    case 4 -> gerenciador.fabricarDemanda(PLACA_SIMPLES);
+                    case 5 -> gerenciador.fabricarDemanda(PLACA_DUPLA);
+                    case 6 -> gerenciador.fabricarDemanda(PLACA_MULTI);
+                    case 7 -> gerenciador.fabricarProximaDemanda();
+                    case 8 -> escolherEstrategia(gerenciador);
+                    case 9 -> cancelarDemanda(gerenciador);
+                    case 10 -> gerenciador.exibirDemandas();
+                    case 11 -> gerenciador.exibirArmazem();
+                    case 12 -> gerenciador.exibirEstoqueMateriaPrima();
+                    case 13 -> comprarMateriaPrima(gerenciador);
+                    case 0 -> {
+                        executando = false;
+                        System.out.println("\nDesligando a linha. Faça bom proveito dos PCB's!");
+                    }
+                    default -> System.out.println("\nOpção inexistente. Escolha um número do menu.");
                 }
-                default -> System.out.println("\nOpção inexistente. Escolha um número do menu.");
+            } catch (RecursoInsuficienteException e) {
+                exibirErro("RECURSO INSUFICIENTE", e.getMessage(),
+                        "Nenhuma alteração foi feita no estoque nem no orçamento.");
+            } catch (MaquinaIndisponivelException e) {
+                exibirErro("EQUIPAMENTO INDISPONÍVEL", e.getMessage(),
+                        "A linha foi desligada e a demanda continua pendente.");
+            } catch (DemandaInvalidaException e) {
+                exibirErro("DEMANDA INVÁLIDA", e.getMessage(),
+                        "A planta segue no mesmo estado.");
             }
         }
 
         scanner.close();
     }
 
-    private static void atualizarDemanda(GerenciadorProducao gerenciador, String tipoProduto) {
+    private static void exibirErro(String titulo, String mensagem, String consequencia) {
+        System.out.println("\n*-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
+        System.out.println("ERRO: " + titulo);
+        System.out.println("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
+        System.out.println(mensagem);
+        System.out.println(consequencia);
+        System.out.print("Pressione ENTER para continuar...");
+        proximaLinha();
+    }
+
+    private static void registrarDemanda(GerenciadorProducao gerenciador, String tipoProduto) {
         int quantidade = lerInteiro("Quantas unidades de " + tipoProduto + "? ");
-        if (quantidade <= 0) {
-            System.out.println("A quantidade precisa ser maior que zero.");
-            return;
-        }
         gerenciador.registrarDemanda(tipoProduto, quantidade);
+    }
+
+    private static void cancelarDemanda(GerenciadorProducao gerenciador) {
+        System.out.println("\n*** CANCELAR DEMANDA ***");
+        System.out.println("1 - " + PLACA_SIMPLES);
+        System.out.println("2 - " + PLACA_DUPLA);
+        System.out.println("3 - " + PLACA_MULTI);
+        System.out.println("0 - Voltar");
+        int qual = lerInteiro("Qual cancelar? ");
+        switch (qual) {
+            case 1 -> gerenciador.cancelarDemanda(PLACA_SIMPLES);
+            case 2 -> gerenciador.cancelarDemanda(PLACA_DUPLA);
+            case 3 -> gerenciador.cancelarDemanda(PLACA_MULTI);
+            case 0 -> { }
+            default -> System.out.println("Opção inválida.");
+        }
+    }
+
+    private static void escolherEstrategia(GerenciadorProducao gerenciador) {
+        System.out.println("\n*** ESTRATÉGIA DE PRODUÇÃO ***");
+        System.out.println("Atual: " + gerenciador.getNomeEstrategia());
+        System.out.println("1 - Ordem de Chegada");
+        System.out.println("2 - Maior Demanda de Produtos");
+        System.out.println("3 - Máximo de Demandas Concluídas");
+        System.out.println("0 - Voltar");
+        int qual = lerInteiro("Qual usar? ");
+        switch (qual) {
+            case 1 -> gerenciador.definirEstrategia(new EstrategiaOrdemChegada());
+            case 2 -> gerenciador.definirEstrategia(new EstrategiaMaiorDemanda());
+            case 3 -> gerenciador.definirEstrategia(new EstrategiaMaximoProdutos());
+            case 0 -> { }
+            default -> System.out.println("Opção inválida.");
+        }
     }
 
     private static void comprarMateriaPrima(GerenciadorProducao gerenciador) {
@@ -89,10 +144,6 @@ public class Main {
             }
         }
         double qtd = lerDouble("Quantidade a comprar: ");
-        if (qtd <= 0) {
-            System.out.println("Informe um valor maior que zero.");
-            return;
-        }
         gerenciador.comprarMateriaPrima(nome, qtd);
     }
 
@@ -106,31 +157,37 @@ public class Main {
         System.out.println("Desenvolvido pelos bilionários: " + DUPLA);
         System.out.println("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n");
         System.out.println("Linha de produção: Corrosora -> Embaladora -> Bancada de Teste");
-        System.out.println("\nCatálogo (custo de operação por placa: R$" + String.format("%.2f", gerenciador.consultarCustoOperacao()) + "):");
+        System.out.println("\nCatálogo (custo de operação por placa: R$"
+                + String.format("%.2f", gerenciador.consultarCustoOperacao()) + "):");
         System.out.println("  " + PLACA_SIMPLES + " - qualidade 0.5 | consome " + DEMANDA_SIMPLES + " dm2 de laminado");
         System.out.println("  " + PLACA_DUPLA + " - qualidade 0.7 | consome " + DEMANDA_DUPLA + " dm2 de laminado");
         System.out.println("  " + PLACA_MULTI + " - qualidade 0.9 | consome " + DEMANDA_MULTI + " dm2 de laminado");
         System.out.println("\nAtenção: quanto maior a qualidade, mais rigorosa é a inspeção!");
     }
 
-    private static void exibirMenu(double budget) {
+    private static void exibirMenu(GerenciadorProducao gerenciador) {
         System.out.println("\n*-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
         System.out.println(NOME_FABRICA);
-        System.out.printf("BUDGET ATUAL: R$%.2f%n", budget);
+        System.out.printf("BUDGET ATUAL: R$%.2f%n", gerenciador.getBudget());
+        System.out.println("ESTRATÉGIA: " + gerenciador.getNomeEstrategia());
         System.out.println("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n");
-        System.out.println("ATUALIZAR DEMANDAS");
-        System.out.println("1 - Atualizar demanda de " + PLACA_SIMPLES);
-        System.out.println("2 - Atualizar demanda de " + PLACA_DUPLA);
-        System.out.println("3 - Atualizar demanda de " + PLACA_MULTI);
+        System.out.println("DEMANDAS");
+        System.out.println("1 - Registrar demanda de " + PLACA_SIMPLES);
+        System.out.println("2 - Registrar demanda de " + PLACA_DUPLA);
+        System.out.println("3 - Registrar demanda de " + PLACA_MULTI);
+        System.out.println("9 - Cancelar uma demanda");
         System.out.println("\nFABRICAR");
         System.out.println("4 - Fabricar " + PLACA_SIMPLES);
         System.out.println("5 - Fabricar " + PLACA_DUPLA);
         System.out.println("6 - Fabricar " + PLACA_MULTI);
+        System.out.println("7 - Fabricar pela estratégia ativa");
+        System.out.println("8 - Trocar estratégia de produção");
         System.out.println("\nCONSULTAR");
-        System.out.println("7 - Ver armazém");
-        System.out.println("8 - Ver estoque de matéria-prima");
+        System.out.println("10 - Ver demandas");
+        System.out.println("11 - Ver armazém");
+        System.out.println("12 - Ver estoque de matéria-prima");
         System.out.println("\nCOMPRAR MATÉRIA-PRIMA");
-        System.out.println("9 - Comprar matéria-prima");
+        System.out.println("13 - Comprar matéria-prima");
         System.out.println("\n0 - SAIR");
     }
 
@@ -141,7 +198,8 @@ public class Main {
             try {
                 return Integer.parseInt(entrada);
             } catch (NumberFormatException e) {
-                System.out.println("Digite apenas números inteiros.");
+                System.out.println("Entrada inválida: \"" + entrada
+                        + "\". Digite apenas números inteiros.");
             }
         }
     }
@@ -153,7 +211,8 @@ public class Main {
             try {
                 return Double.parseDouble(entrada);
             } catch (NumberFormatException e) {
-                System.out.println("Digite apenas números (ex.: 12 ou 12.5).");
+                System.out.println("Entrada inválida: \"" + entrada
+                        + "\". Digite apenas números (ex.: 12 ou 12.5).");
             }
         }
     }

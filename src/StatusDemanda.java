@@ -1,16 +1,20 @@
-public  enum StatusDemanda{
-    PENDENTE("Aguarndando início"),
+public enum StatusDemanda {
+
+    PENDENTE("Aguardando início"),
+
     EM_PRODUCAO("Em fabricação"),
+
     CONCLUIDA("Finalizada com sucesso"),
+
     CANCELADA("Cancelada");
-    
+
     private final String descricao;
-    
-    StatusDemanda(String descricao){
+
+    StatusDemanda(String descricao) {
         this.descricao = descricao;
     }
-    
-    public String getDescricao(){
+
+    public String getDescricao() {
         return descricao;
     }
 }
