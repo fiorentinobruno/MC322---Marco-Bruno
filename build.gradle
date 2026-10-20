@@ -1,0 +1,37 @@
+plugins {
+    id 'application'
+}
+
+group = 'br.unicamp.mc322'
+version = '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    // Compatível com qualquer JDK >= 17 (o código usa switch com setas, Java 14+).
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+application {
+    mainClass = 'Main'
+    // Garante acentuação correta no terminal independentemente do sistema operacional.
+    applicationDefaultJvmArgs = ['-Dfile.encoding=UTF-8', '-Dstdout.encoding=UTF-8']
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
+    options.charSet = 'UTF-8'
+    options.docEncoding = 'UTF-8'
+}
+
+// O menu lê do teclado; sem isso o "./gradlew run" não receberia a entrada do usuário.
+tasks.named('run') {
+    standardInput = System.in
+}

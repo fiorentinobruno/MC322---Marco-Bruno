@@ -1,4 +1,9 @@
 *.class
 bin/
-*.class
-bin/
+build/
+.gradle/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+out/
