@@ -75,3 +75,46 @@ Menu:
 Menu principal com o cabecalho (estrategia, cenario e budget) e submenus de Demandas,
 Fabricacao, Consultar, Estrategia e Auditoria/Manutencao, alem da compra de materia-prima.
  
+
+ TAREFA 4
+----------------------------------------------------------------------
+
+Gradle:
+O projeto foi movido para a estrutura padrao src/main/java e passou a ter build.gradle,
+settings.gradle e o Gradle Wrapper (gradlew e gradlew.bat), entao nao e preciso instalar o
+Gradle. O build.gradle so configura a construcao (plugin application, classe principal Main,
+encoding UTF-8 e entrada do teclado no "run"), sem logica de negocio. As pastas bin/ e build/
+nao ficam mais versionadas, ja que o build parte de um ambiente limpo.
+
+Javadoc:
+Todas as classes, interfaces e enums foram documentados com @param, @return, @throws e @author,
+priorizando as regras de negocio (ex.: a demanda cancelada nao pode ser alterada, a estacao de
+inspecao e mais rigorosa para placas de maior qualidade) em vez de repetir o nome do metodo.
+
+Excecoes de dominio (KISS):
+Criamos uma raiz PlantaException (nao verificada) com apenas cinco subclasses, uma por tipo de
+problema: EntradaInvalidaException (erro de entrada), DemandaInvalidaException e
+OrcamentoInsuficienteException / RecursoInsuficienteException (erros de regra de negocio) e
+MaquinaIndisponivelException (maquina quebrada, desligada, falha tecnica ou sem capacidade).
+Escolhemos excecoes nao verificadas para nao poluir todas as assinaturas, e documentamos cada
+uma com @throws. Falhas realmente inesperadas (bugs) sao tratadas em um unico ponto, no Main.
+
+Onde as excecoes sao tratadas:
+O dominio (GerenciadorProducao, Maquina, Demanda, MateriaPrima) apenas lanca excecoes e nao
+imprime erros. O Main e a camada que interage com o usuario: cada acao do menu passa por
+executar(), que captura PlantaException, mostra a caixa de ERRO, espera ENTER e volta ao menu.
+Nao ha catch vazio.
+
+Consistencia do estado:
+Antes de produzir, o gerenciador confere orcamento, capacidade e materia-prima de TODAS as
+etapas sem consumir nada (verificarRecursos). Se mesmo assim a linha falhar no meio (por
+exemplo, falha tecnica aleatoria de uma maquina, ou ate um erro inesperado), o orcamento e os
+estoques sao restaurados antes de o erro ser repassado ao Main, e a demanda so e atualizada depois
+que a producao termina. O desgaste das maquinas que chegaram a operar nao e desfeito, porque
+representa o uso fisico real. As maquinas sao sempre desligadas
+(finally) e o id da placa e o numero do lote so avancam quando a producao termina. Mantivemos a
+regra da Tarefa 3: a demanda e cancelada quando falta orcamento para produzir.
+
+Entradas:
+As leituras do teclado repetem a pergunta em caso de entrada invalida e rejeitam NaN e infinito.
+As quantidades sao validadas no dominio (quantidade positiva, limite de inteiro).
