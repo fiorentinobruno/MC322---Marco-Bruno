@@ -5,27 +5,38 @@ import java.util.Random;
  * selo de cera.
  * <p>
  * A chance de rejeição é {@code qualidade * fator + risco acumulado}; portanto placas de maior
- * qualidade exigida passam por uma inspeção mais rigorosa.
+ * qualidade exigida passam por uma inspeção mais rigorosa. Problemas nas partes de qualquer
+ * máquina da linha (como temperatura em alerta) aumentam o risco acumulado e, com ele, a chance
+ * de rejeição.
+ * <p>
+ * Tem um motor de 0,75 kW e, por lidar com equipamentos de medição, suporta até 60 °C.
  *
  * @author Marco Correa e Bruno Fiorentino
  */
 public class EstacaoInspecao extends Maquina {
+    private static final double POTENCIA_MOTOR = 0.75;
+    private static final double TEMPERATURA_MAXIMA = 60.0;
+
     private double fator;
     private double quantidadeSeloPorInspecao;
     private Random random;
 
     /**
-     * Cria uma estação de inspeção (reparo de R$ 125).
+     * Cria uma estação de inspeção (reparo de R$ 125, motor de 0,75 kW e temperatura máxima de 60 °C).
      *
-     * @param nome                     nome de exibição
-     * @param capacidadeMax            capacidade máxima por inspeção
-     * @param custoOperacao            custo, em reais, de cada inspeção
-     * @param probabilidadeFalha       probabilidade-base de falha técnica (0 a 1)
-     * @param fator                    peso da qualidade da placa na chance de rejeição
+     * @param nome                      nome de exibição
+     * @param capacidadeMax             capacidade máxima por inspeção
+     * @param custoOperacao             custo, em reais, de cada inspeção
+     * @param probabilidadeFalha        probabilidade-base de falha técnica (0 a 1)
+     * @param fator                     peso da qualidade da placa na chance de rejeição
      * @param quantidadeSeloPorInspecao selos de cera consumidos em cada inspeção
+     * @param quantidadeVentoinhas      número de ventoinhas de resfriamento; deve ser pelo menos 1
+     * @throws EntradaInvalidaException se a quantidade de ventoinhas for menor que 1
      */
-    public EstacaoInspecao(String nome, double capacidadeMax, double custoOperacao, double probabilidadeFalha, double fator, double quantidadeSeloPorInspecao) {
-        super(nome, capacidadeMax, probabilidadeFalha, custoOperacao, 125);
+    public EstacaoInspecao(String nome, double capacidadeMax, double custoOperacao, double probabilidadeFalha,
+                           double fator, double quantidadeSeloPorInspecao, int quantidadeVentoinhas) {
+        super(nome, capacidadeMax, probabilidadeFalha, custoOperacao, 125, POTENCIA_MOTOR, TEMPERATURA_MAXIMA,
+                quantidadeVentoinhas);
         this.fator = fator;
         this.quantidadeSeloPorInspecao = quantidadeSeloPorInspecao;
         this.random = new Random();
@@ -54,9 +65,9 @@ public class EstacaoInspecao extends Maquina {
     }
 
     /**
-     * Inspeciona a placa: consome um selo, aplica desgaste e marca a placa como aprovada
-     * ({@code "inspecionado"}) ou rejeitada ({@code "defeituoso"}). Uma rejeição é um resultado
-     * normal da inspeção, não uma exceção.
+     * Inspeciona a placa: consome um selo, executa o ciclo de operação (desgaste e temperatura) e
+     * marca a placa como aprovada ({@code "inspecionado"}) ou rejeitada ({@code "defeituoso"}).
+     * Uma rejeição é um resultado normal da inspeção, não uma exceção.
      *
      * @param mp      selos de cera a serem consumidos
      * @param produto placa a ser inspecionada
@@ -69,7 +80,7 @@ public class EstacaoInspecao extends Maquina {
         exigirSemFalhaTecnica(produto, "A inspeção");
         verificarRecursos(mp, produto);
 
-        aplicarDesgaste();
+        executarCicloOperacao(produto);
 
         mp.consumir(quantidadeSeloPorInspecao);
 

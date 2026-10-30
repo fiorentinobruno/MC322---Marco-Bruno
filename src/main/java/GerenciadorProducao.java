@@ -2,16 +2,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Coordena a planta industrial: demandas, linha de produção (corrosão, embalagem e inspeção),
- * estoque de matéria-prima, orçamento, estratégia de produção e auditoria.
+ * Coordena a planta industrial: demandas, linha de produção, estoque de matéria-prima, orçamento,
+ * estratégia de produção e auditoria.
+ * <p>
+ * <b>Estrutura.</b> O gerenciador conhece apenas a {@link LinhaDeProducao} (o Agrupador). Ele não
+ * guarda referências às máquinas nem às suas partes: para produzir, consultar custos, reparar ou
+ * auditar, pede à linha, que delega às máquinas, que por sua vez delegam às suas partes
+ * (Lei de Deméter).
  * <p>
  * <b>Tratamento de erros e consistência de estado.</b> As operações públicas que podem falhar
  * lançam subclasses de {@link PlantaException}; quem interage com o usuário ({@link Main}) as
  * captura. Uma produção que falha não deixa estoque, orçamento nem demanda parcialmente
  * modificados: todas as verificações de recurso são feitas antes de qualquer consumo e, se algo
- * falhar durante a linha (por exemplo, uma falha técnica aleatória), o estoque e o orçamento são
- * restaurados ao valor anterior. O desgaste das máquinas que chegaram a operar é mantido, pois
- * representa uso físico real.
+ * falhar durante a linha (por exemplo, uma falha técnica aleatória), o estoque é restaurado ao
+ * valor anterior e o orçamento só é debitado depois que a linha termina. O desgaste das máquinas
+ * e de suas partes que chegaram a operar é mantido, pois representa uso físico real.
  *
  * @author Marco Correa e Bruno Fiorentino
  */
@@ -19,62 +24,56 @@ public class GerenciadorProducao {
 
     private static final String AVISO_SEM_ALTERACAO =
             "Nenhuma alteração foi realizada no estoque nem no orçamento.";
+    private static final int ETAPAS_DA_LINHA = 3;
 
     private static int contadorPlacas = 0;
     private int contadorLotes = 0;
 
     private List<Demanda> demandas;
     private List<Produto> produtosFabricados;
-    private List<Maquina> maquinas;
 
     private MateriaPrima materiaPrimaPrincipal;
     private MateriaPrima materiaPrimaEmbalagem;
     private MateriaPrima materiaPrimaSelo;
 
-    private Corrosora corrosora;
-    private Embaladora embaladora;
-    private EstacaoInspecao estacaoInspecao;
+    private final LinhaDeProducao linha;
 
     private double budget;
     private final Cenario cenario;
     private EstrategiaProducao estrategiaAtual;
 
     /**
-     * Monta a planta e aplica o cenário a todas as máquinas.
+     * Monta a planta e aplica o cenário a todas as máquinas da linha.
      *
-     * @param materiaPrimaPrincipal laminado consumido pela corrosora
-     * @param materiaPrimaEmbalagem sacos antiestáticos consumidos pela embaladora
-     * @param materiaPrimaSelo      selos de cera consumidos pela estação de inspeção
-     * @param corrosora             primeira etapa da linha
-     * @param embaladora            segunda etapa da linha
-     * @param estacaoInspecao       terceira etapa da linha
+     * @param materiaPrimaPrincipal laminado consumido pela primeira etapa (corrosão)
+     * @param materiaPrimaEmbalagem sacos antiestáticos consumidos pela segunda etapa (embalagem)
+     * @param materiaPrimaSelo      selos de cera consumidos pela terceira etapa (inspeção)
+     * @param linha                 linha de produção com as três etapas, na ordem corrosão, embalagem e inspeção
      * @param cenario               cenário de operação, que define o orçamento inicial
      * @param estrategiaInicial     estratégia de produção inicial
+     * @throws EntradaInvalidaException se a linha for nula ou não tiver exatamente três máquinas
      */
     public GerenciadorProducao(MateriaPrima materiaPrimaPrincipal, MateriaPrima materiaPrimaEmbalagem,
-                               MateriaPrima materiaPrimaSelo, Corrosora corrosora, Embaladora embaladora,
-                               EstacaoInspecao estacaoInspecao, Cenario cenario,
+                               MateriaPrima materiaPrimaSelo, LinhaDeProducao linha, Cenario cenario,
                                EstrategiaProducao estrategiaInicial) {
+        if (linha == null || linha.getQuantidadeMaquinas() != ETAPAS_DA_LINHA) {
+            throw new EntradaInvalidaException("A linha de produção deve ter exatamente " + ETAPAS_DA_LINHA
+                    + " máquinas: corrosão, embalagem e inspeção.");
+        }
         this.demandas = new ArrayList<>();
         this.produtosFabricados = new ArrayList<>();
-        this.maquinas = new ArrayList<>();
-        this.maquinas.add(corrosora);
-        this.maquinas.add(embaladora);
-        this.maquinas.add(estacaoInspecao);
 
         this.materiaPrimaPrincipal = materiaPrimaPrincipal;
         this.materiaPrimaEmbalagem = materiaPrimaEmbalagem;
         this.materiaPrimaSelo = materiaPrimaSelo;
 
-        this.corrosora = corrosora;
-        this.embaladora = embaladora;
-        this.estacaoInspecao = estacaoInspecao;
+        this.linha = linha;
 
         this.cenario = cenario;
         this.budget = cenario.getBudgetInicial();
         this.estrategiaAtual = estrategiaInicial;
 
-        for (Maquina m : maquinas) m.aplicarCenario(cenario);
+        linha.aplicarCenario(cenario);
     }
 
     /**
@@ -110,12 +109,21 @@ public class GerenciadorProducao {
     }
 
     /**
+     * Retorna o nome da linha de produção.
+     *
+     * @return o nome da linha
+     */
+    public String getNomeLinha() {
+        return linha.getNome();
+    }
+
+    /**
      * Fabrica uma unidade da demanda escolhida pela estratégia atual.
      *
      * @throws DemandaInvalidaException       se nenhuma demanda é elegível para a estratégia
      * @throws OrcamentoInsuficienteException se o orçamento não cobre uma produção (a demanda é cancelada)
      * @throws RecursoInsuficienteException   se falta matéria-prima em alguma etapa
-     * @throws MaquinaIndisponivelException   se alguma máquina está quebrada, desligada ou falha
+     * @throws MaquinaIndisponivelException   se alguma máquina está quebrada, superaquecida, desligada ou falha
      */
     public void executarProximaProducao() {
         Demanda d = estrategiaAtual.selecionarDemanda(demandas, budget);
@@ -176,7 +184,7 @@ public class GerenciadorProducao {
      * @throws DemandaInvalidaException       se não há demanda pendente do tipo, ou ela foi cancelada
      * @throws OrcamentoInsuficienteException se o orçamento não cobre uma produção (a demanda é cancelada)
      * @throws RecursoInsuficienteException   se falta matéria-prima em alguma etapa
-     * @throws MaquinaIndisponivelException   se alguma máquina está quebrada, desligada ou falha
+     * @throws MaquinaIndisponivelException   se alguma máquina está quebrada, superaquecida, desligada ou falha
      */
     public void fabricarDemanda(String tipoProduto) {
         Demanda demanda = buscarDemanda(tipoProduto);
@@ -200,18 +208,18 @@ public class GerenciadorProducao {
      * <ol>
      *   <li>confere o orçamento (se faltar, a demanda é cancelada, conforme a regra de negócio);</li>
      *   <li>cria o produto (rejeita tipo desconhecido);</li>
-     *   <li>confere capacidade e matéria-prima de <b>todas</b> as etapas, sem consumir nada;</li>
-     *   <li>percorre as etapas; se qualquer uma falhar (inclusive por erro inesperado), restaura
-     *       estoque e orçamento e relança a exceção;</li>
-     *   <li>somente ao final atualiza demanda, armazém e contadores.</li>
+     *   <li>pede à linha que confira capacidade e matéria-prima de <b>todas</b> as etapas, sem consumir nada;</li>
+     *   <li>pede à linha que produza; se qualquer etapa falhar (inclusive por erro inesperado),
+     *       restaura o estoque e relança a exceção;</li>
+     *   <li>somente ao final debita o orçamento e atualiza demanda, armazém e contadores.</li>
      * </ol>
-     * As máquinas são sempre desligadas ao terminar, com sucesso ou não. Uma placa rejeitada na
+     * A linha sempre desliga as máquinas ao terminar, com sucesso ou não. Uma placa rejeitada na
      * inspeção não é erro: os recursos gastos permanecem e a placa não vai para o armazém.
      *
      * @param demanda demanda a atender
      * @throws OrcamentoInsuficienteException se o orçamento não cobre o custo da produção
      * @throws RecursoInsuficienteException   se falta matéria-prima em alguma etapa
-     * @throws MaquinaIndisponivelException   se alguma máquina está quebrada, desligada, falha ou não comporta o lote
+     * @throws MaquinaIndisponivelException   se alguma máquina está quebrada, superaquecida, desligada, falha ou não comporta o lote
      */
     private void fabricarUmaUnidade(Demanda demanda) {
         double custo = consultarCustoOperacao();
@@ -226,14 +234,11 @@ public class GerenciadorProducao {
         Produto produto = criarProduto(demanda.getTipoProduto());
 
         try {
-            corrosora.verificarRecursos(materiaPrimaPrincipal, produto);
-            embaladora.verificarRecursos(materiaPrimaEmbalagem, produto);
-            estacaoInspecao.verificarRecursos(materiaPrimaSelo, produto);
+            linha.verificarRecursos(produto, materiaPrimaPrincipal, materiaPrimaEmbalagem, materiaPrimaSelo);
         } catch (PlantaException e) {
             throw e.comObservacao(AVISO_SEM_ALTERACAO);
         }
 
-        double budgetAntes = budget;
         double principalAntes = materiaPrimaPrincipal.getQuantidade();
         double embalagemAntes = materiaPrimaEmbalagem.getQuantidade();
         double seloAntes = materiaPrimaSelo.getQuantidade();
@@ -241,22 +246,10 @@ public class GerenciadorProducao {
         produto.setLote("LOTE-" + (contadorLotes + 1));
 
         try {
-            ligarMaquinas();
-
-            System.out.println("\n--- Iniciando produção de " + demanda.getTipoProduto() + " (" + produto.getLote() + ") ---");
-
-            corrosora.processar(materiaPrimaPrincipal, produto);
-            budget -= corrosora.getCustoOperacao();
-
-            embaladora.processar(materiaPrimaEmbalagem, produto);
-            budget -= embaladora.getCustoOperacao();
-
-            estacaoInspecao.processar(materiaPrimaSelo, produto);
-            budget -= estacaoInspecao.getCustoOperacao();
+            linha.produzir(produto, materiaPrimaPrincipal, materiaPrimaEmbalagem, materiaPrimaSelo);
         } catch (RuntimeException e) {
             // Qualquer falha no meio da linha desfaz o consumo antes de propagar o erro;
             // a exceção não é tratada aqui, apenas relançada para a interface.
-            budget = budgetAntes;
             restaurarEstoque(materiaPrimaPrincipal, principalAntes);
             restaurarEstoque(materiaPrimaEmbalagem, embalagemAntes);
             restaurarEstoque(materiaPrimaSelo, seloAntes);
@@ -264,10 +257,9 @@ public class GerenciadorProducao {
                 throw pe.comObservacao("Produção abortada. " + AVISO_SEM_ALTERACAO);
             }
             throw e;
-        } finally {
-            desligarMaquinas();
         }
 
+        budget -= custo;
         contadorLotes++;
         contadorPlacas++;
         demanda.iniciarProducao();
@@ -364,17 +356,41 @@ public class GerenciadorProducao {
     }
 
     /**
-     * Gera a auditoria geral, percorrendo máquinas e produtos de forma polimórfica como
-     * {@link Auditavel}.
+     * Gera a auditoria geral, percorrendo a linha de produção e os produtos de forma polimórfica
+     * como {@link Auditavel}. O relatório da linha já desce em cascata até as partes de cada máquina.
      */
     public void gerarAuditoriaGeral() {
         List<Auditavel> itens = new ArrayList<>();
-        itens.addAll(maquinas);
+        itens.add(linha);
         itens.addAll(produtosFabricados);
         System.out.println("\n*** AUDITORIA GERAL ***");
         for (Auditavel a : itens) {
             System.out.println((a.precisaManutencao() ? "[!] " : "[OK] ") + a.gerarRelatorioDiagnostico());
         }
+    }
+
+    /**
+     * Exibe a auditoria estrutural em cascata (linha, máquinas e partes de cada máquina).
+     */
+    public void gerarAuditoriaEstrutural() {
+        System.out.println("\n*** AUDITORIA ESTRUTURAL ***");
+        System.out.println(linha.gerarRelatorioDiagnostico());
+    }
+
+    /**
+     * Exibe a estrutura da linha: as máquinas, em ordem, e os componentes de cada uma.
+     */
+    public void exibirEstruturaLinha() {
+        System.out.println("\n*** ESTRUTURA DA LINHA ***");
+        System.out.println(linha.descreverEstrutura());
+    }
+
+    /**
+     * Exibe as leituras atuais de temperatura, ventilação e motor de cada máquina da linha.
+     */
+    public void exibirLeiturasSensores() {
+        System.out.println("\n*** LEITURAS DOS SENSORES ***");
+        System.out.println(linha.gerarLeiturasSensores());
     }
 
     /**
@@ -455,22 +471,6 @@ public class GerenciadorProducao {
     }
 
     /**
-     * Liga todas as máquinas da linha.
-     *
-     * @throws MaquinaIndisponivelException se alguma máquina está quebrada
-     */
-    private void ligarMaquinas() {
-        for (Maquina m : maquinas) m.ligar();
-    }
-
-    /**
-     * Desliga todas as máquinas da linha.
-     */
-    private void desligarMaquinas() {
-        for (Maquina m : maquinas) m.desligar();
-    }
-
-    /**
      * Devolve ao estoque o que foi consumido desde a quantidade registrada antes da produção.
      *
      * @param mp    matéria-prima a restaurar
@@ -493,44 +493,37 @@ public class GerenciadorProducao {
     }
 
     /**
-     * Soma o custo de operação de todas as máquinas, ou seja, o custo de produzir uma unidade.
+     * Retorna o custo de produzir uma unidade, calculado pela linha de produção.
      *
      * @return o custo por unidade produzida, em reais
      */
     public double consultarCustoOperacao() {
-        double total = 0;
-        for (Maquina m : maquinas) total += m.getCustoOperacao();
-        return total;
+        return linha.calcularCustoPorUnidade();
     }
 
     /**
-     * Exibe o diagnóstico numerado de cada máquina.
+     * Exibe o resumo numerado de cada máquina da linha.
      */
     public void exibirMaquinas() {
         System.out.println("\n*** MÁQUINAS ***");
-        for (int i = 0; i < maquinas.size(); i++) {
-            System.out.println((i + 1) + " - " + maquinas.get(i).gerarRelatorioDiagnostico());
-        }
+        System.out.println(linha.listarMaquinas());
     }
 
     /**
-     * Repara uma máquina, debitando o custo de reparo do orçamento.
+     * Repara uma máquina da linha (estrutura e partes), debitando o custo de reparo do orçamento.
      *
-     * @param indice posição da máquina na lista (começando em zero)
+     * @param indice posição da máquina na linha (começando em zero)
      * @throws EntradaInvalidaException       se o índice não corresponde a nenhuma máquina
      * @throws OrcamentoInsuficienteException se o custo do reparo excede o orçamento
      */
     public void repararMaquina(int indice) {
-        if (indice < 0 || indice >= maquinas.size()) {
-            throw new EntradaInvalidaException("Máquina inválida. Escolha um número entre 1 e " + maquinas.size() + ".");
-        }
-        Maquina m = maquinas.get(indice);
-        if (m.getCustoReparo() > budget) {
+        double custoReparo = linha.consultarCustoReparo(indice);
+        if (custoReparo > budget) {
             throw new OrcamentoInsuficienteException(String.format(
-                    "Orçamento insuficiente para reparar %s: custo R$%.2f, orçamento atual R$%.2f.",
-                    m.getNome(), m.getCustoReparo(), budget));
+                    "Orçamento insuficiente para reparar a máquina %d: custo R$%.2f, orçamento atual R$%.2f.",
+                    indice + 1, custoReparo, budget));
         }
-        budget -= m.getCustoReparo();
-        m.reparar();
+        budget -= custoReparo;
+        linha.repararMaquina(indice);
     }
 }
