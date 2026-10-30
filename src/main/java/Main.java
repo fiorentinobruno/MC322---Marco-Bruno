@@ -3,6 +3,10 @@ import java.util.Scanner;
 /**
  * Ponto de entrada e camada de interação com o usuário (menus no terminal) da planta de PCBs.
  * <p>
+ * Aqui são criadas as matérias-primas, as máquinas e a {@link LinhaDeProducao} que as agrupa. As
+ * máquinas são criadas fora da linha (agregação) e recebem apenas configurações primitivas: cada
+ * máquina instancia suas próprias partes internas (composição).
+ * <p>
  * Esta classe é a responsável por <b>capturar as exceções</b> lançadas pelo domínio: cada ação
  * do menu é executada por {@link #executar(Runnable)}, que exibe uma mensagem de erro clara e
  * devolve o usuário ao menu em que estava, sem encerrar o programa.
@@ -37,7 +41,8 @@ public class Main {
     }
 
     /**
-     * Inicia o programa: escolhe o cenário e executa o menu principal até o usuário sair.
+     * Inicia o programa: monta a linha de produção, escolhe o cenário e executa o menu principal
+     * até o usuário sair.
      *
      * @param args argumentos de linha de comando (não utilizados)
      */
@@ -47,15 +52,22 @@ public class Main {
         MateriaPrima esd      = new MateriaPrima("MP2", "Saco ESD antiestático", 100.0, "un", 10.0, 2.0);
         MateriaPrima cera     = new MateriaPrima("MP3", "Selo de cera", 100.0, "un", 10.0, 1.0);
 
-        Corrosora corrosora = new Corrosora("Corrosora CU-1", 60.0, 10.0, 0.3);
-        Embaladora embaladora = new Embaladora("Embaladora ESD-2", 60.0, 8.0, 0.2, 1.0);
-        EstacaoInspecao inspecao = new EstacaoInspecao("Bancada de Teste", 60.0, 12.0, 0.1, 0.3, 1.0);
+        // O último argumento de cada máquina é o número de ventoinhas (relação 1:N com a máquina).
+        Corrosora corrosora = new Corrosora("Corrosora CU-1", 60.0, 10.0, 0.3, 2);
+        Embaladora embaladora = new Embaladora("Embaladora ESD-2", 60.0, 8.0, 0.2, 1.0, 2);
+        EstacaoInspecao inspecao = new EstacaoInspecao("Bancada de Teste", 60.0, 12.0, 0.1, 0.3, 1.0, 1);
+
+        // Agrupador: a linha recebe máquinas que já existem (agregação), na ordem das etapas.
+        LinhaDeProducao linhaPrincipal = new LinhaDeProducao("Linha de Produção PCB-1");
+        linhaPrincipal.adicionarMaquina(corrosora);
+        linhaPrincipal.adicionarMaquina(embaladora);
+        linhaPrincipal.adicionarMaquina(inspecao);
 
         exibirIntroducao(laminado);
         Cenario cenario = escolherCenario();
 
         GerenciadorProducao gerenciador = new GerenciadorProducao(
-                laminado, esd, cera, corrosora, embaladora, inspecao,
+                laminado, esd, cera, linhaPrincipal,
                 cenario, new EstrategiaOrdemChegada());
 
         boolean executando = true;
@@ -67,6 +79,7 @@ public class Main {
             System.out.println("4 - Comprar matéria-prima");
             System.out.println("5 - Gerenciar estratégia");
             System.out.println("6 - Auditoria e manutenção");
+            System.out.println("7 - Linha de produção");
             System.out.println("0 - SAIR");
             int opcao = lerInteiro("ESCOLHA: ");
 
@@ -77,6 +90,7 @@ public class Main {
                 case 4 -> executar(() -> comprarMateriaPrima(gerenciador));
                 case 5 -> menuEstrategia(gerenciador);
                 case 6 -> menuAuditoria(gerenciador);
+                case 7 -> menuLinhaProducao(gerenciador);
                 case 0 -> {
                     executando = false;
                     System.out.println("\nDesligando a linha. Faça bom proveito dos PCB's!");
@@ -177,6 +191,7 @@ public class Main {
         System.out.println("Produto fabricado: Placas de circuito impresso (PCB's)");
         System.out.println("Desenvolvido pelos bilionários: " + DUPLA);
         System.out.println("Linha de produção: Corrosora -> Embaladora -> Bancada de Teste");
+        System.out.println("Cada máquina é composta por motor, sensor de temperatura e ventoinhas de resfriamento.");
     }
 
     /**
@@ -201,13 +216,14 @@ public class Main {
     // Cabeçalho
 
     /**
-     * Exibe o cabeçalho com estratégia, cenário e orçamento atuais.
+     * Exibe o cabeçalho com linha, estratégia, cenário e orçamento atuais.
      *
      * @param g gerenciador da planta
      */
     private static void exibirCabecalho(GerenciadorProducao g) {
         System.out.println("\n" + LINHA);
         System.out.println("| [" + NOME_FABRICA + "]");
+        System.out.println("| LINHA ATIVA: [" + g.getNomeLinha() + "]");
         System.out.println("| ESTRATEGIA ATUAL: [" + g.getEstrategiaAtual().getNomeEstrategia() + "]");
         System.out.println("| CENARIO ATIVO: [" + g.getCenario().getNome() + "]");
         System.out.printf("| BUDGET ATUAL: R$ %.2f%n", g.getBudget());
@@ -341,16 +357,43 @@ public class Main {
         boolean voltar = false;
         while (!voltar) {
             exibirTituloSubmenu("AUDITORIA E MANUTENÇÃO");
-            System.out.println("1 - Relatório geral (máquinas e produtos)");
-            System.out.println("2 - Detalhar máquinas");
-            System.out.println("3 - Reparar máquina");
+            System.out.println("1 - Relatório geral (linha, máquinas, componentes e produtos)");
+            System.out.println("2 - Auditoria estrutural em cascata (linha > máquinas > componentes)");
+            System.out.println("3 - Detalhar máquinas");
+            System.out.println("4 - Reparar máquina");
             System.out.println("0 - Voltar");
             int opcao = lerInteiro("ESCOLHA: ");
 
             switch (opcao) {
                 case 1 -> executar(g::gerarAuditoriaGeral);
-                case 2 -> executar(g::exibirMaquinas);
-                case 3 -> executar(() -> repararMaquina(g));
+                case 2 -> executar(g::gerarAuditoriaEstrutural);
+                case 3 -> executar(g::exibirMaquinas);
+                case 4 -> executar(() -> repararMaquina(g));
+                case 0 -> voltar = true;
+                default -> opcaoInexistente();
+            }
+        }
+    }
+
+    /**
+     * Submenu da linha de produção (o agrupador das máquinas).
+     *
+     * @param g gerenciador da planta
+     */
+    private static void menuLinhaProducao(GerenciadorProducao g) {
+        boolean voltar = false;
+        while (!voltar) {
+            exibirTituloSubmenu("LINHA DE PRODUÇÃO");
+            System.out.println("1 - Ver estrutura da linha (máquinas e componentes)");
+            System.out.println("2 - Ver leituras de temperatura, ventilação e motor");
+            System.out.println("3 - Auditoria estrutural em cascata");
+            System.out.println("0 - Voltar");
+            int opcao = lerInteiro("ESCOLHA: ");
+
+            switch (opcao) {
+                case 1 -> executar(g::exibirEstruturaLinha);
+                case 2 -> executar(g::exibirLeiturasSensores);
+                case 3 -> executar(g::gerarAuditoriaEstrutural);
                 case 0 -> voltar = true;
                 default -> opcaoInexistente();
             }

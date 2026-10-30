@@ -3,23 +3,33 @@ import java.util.Random;
 /**
  * Primeira etapa da linha: corrói o laminado de cobre para revelar as trilhas da placa.
  * Consome laminado na quantidade exigida pelo produto e pode introduzir um defeito aleatório.
+ * <p>
+ * É a máquina que mais aquece: seu motor de 3 kW movimenta a solução de corrosão e o banho não
+ * pode passar de 70 °C.
  *
  * @author Marco Correa e Bruno Fiorentino
  */
 public class Corrosora extends Maquina {
+    private static final double POTENCIA_MOTOR = 3.0;
+    private static final double TEMPERATURA_MAXIMA = 70.0;
+
     private double chanceAumentarFalha;
     private Random random;
 
     /**
-     * Cria uma corrosora (probabilidade-base de falha 2% e reparo de R$ 250).
+     * Cria uma corrosora (probabilidade-base de falha 2%, reparo de R$ 250, motor de 3 kW e
+     * temperatura máxima de 70 °C).
      *
-     * @param nome                nome de exibição
-     * @param capacidadeMax       maior quantidade de laminado que cabe em uma corrosão
-     * @param custoOperacao       custo, em reais, de cada corrosão
-     * @param chanceAumentarFalha chance (0 a 1) de a corrosão introduzir 10% de risco de defeito na placa
+     * @param nome                 nome de exibição
+     * @param capacidadeMax        maior quantidade de laminado que cabe em uma corrosão
+     * @param custoOperacao        custo, em reais, de cada corrosão
+     * @param chanceAumentarFalha  chance (0 a 1) de a corrosão introduzir 10% de risco de defeito na placa
+     * @param quantidadeVentoinhas número de ventoinhas de resfriamento; deve ser pelo menos 1
+     * @throws EntradaInvalidaException se a quantidade de ventoinhas for menor que 1
      */
-    public Corrosora(String nome, double capacidadeMax, double custoOperacao, double chanceAumentarFalha) {
-        super(nome, capacidadeMax, 0.02, custoOperacao, 250);
+    public Corrosora(String nome, double capacidadeMax, double custoOperacao, double chanceAumentarFalha,
+                     int quantidadeVentoinhas) {
+        super(nome, capacidadeMax, 0.02, custoOperacao, 250, POTENCIA_MOTOR, TEMPERATURA_MAXIMA, quantidadeVentoinhas);
         this.chanceAumentarFalha = chanceAumentarFalha;
         this.random = new Random();
     }
@@ -49,8 +59,8 @@ public class Corrosora extends Maquina {
     }
 
     /**
-     * Corrói a placa: consome laminado, aplica desgaste e pode adicionar risco de defeito.
-     * Todas as verificações ocorrem antes de qualquer consumo.
+     * Corrói a placa: consome laminado, executa o ciclo de operação (desgaste e temperatura) e pode
+     * adicionar risco de defeito. Todas as verificações ocorrem antes de qualquer consumo.
      *
      * @param mp      laminado a ser consumido
      * @param produto placa a ser corroída
@@ -63,7 +73,7 @@ public class Corrosora extends Maquina {
         exigirSemFalhaTecnica(produto, "O processamento");
         verificarRecursos(mp, produto);
 
-        aplicarDesgaste();
+        executarCicloOperacao(produto);
 
         mp.consumir(produto.getQuantidadeMateriaPrimaPorUnidade());
         produto.processar(mp.getId());
