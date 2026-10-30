@@ -1,13 +1,13 @@
     TAREFA 1
     -----------------------------------------------------------------
-    
+
     A escolha do tema foi feita pelo Marco, já que ele possui um contato com PCBs na sua atividade extracurricular ( o projeto Jupiter). Nesse projeto
-ele entrou em contato com algumas placas de circuito impresso necessárias para o módulo de controle de uma célula combustível. Além dessa 
+ele entrou em contato com algumas placas de circuito impresso necessárias para o módulo de controle de uma célula combustível. Além dessa
 familiaridade de um dos membros da dupla, achamos que o tema PCB para o nosso trabalho teria uma boa relação com nossos cursos de graduação
 (ciência da computação e engenharia de controle e automação). Então fizemos algumas pesquisas sobre nosso produto(como qual matéria prima usarmos)
 e demos inicio ao nosso projeto.
-    A planta industrial pode ser expandida para montagem de componentes na placa, como portas lógicas. Ou seja sairmos de uma PCB para uma PCBA, 
-assim podemos incluir diversos componentes nas nossas placas e depois testá-las. 
+    A planta industrial pode ser expandida para montagem de componentes na placa, como portas lógicas. Ou seja sairmos de uma PCB para uma PCBA,
+assim podemos incluir diversos componentes nas nossas placas e depois testá-las.
 
 
 
@@ -34,7 +34,7 @@ chance de rejeição), conforme pedido no enunciado.
 
  TAREFA 3
 ----------------------------------------------------------------------
- 
+
 Strategy (EstrategiaProducao):
 O GerenciadorProducao guarda uma estrategiaAtual e só conhece a interface, nunca as
 classes concretas. As estrategias sao criadas na Main e trocadas em tempo de execucao
@@ -44,37 +44,37 @@ pelo menu (setEstrategia). Adaptamos os criterios ao tema:
 - EstrategiaMaximoProdutos ("Maximizar Producao"): escolhe a demanda que rende mais placas dentro do budget.
 O filtro comum (status valido, quantidade > 0 e budget suficiente) ficou em um metodo
 default da interface (ehElegivel) para nao repetir codigo nas tres estrategias.
- 
+
 Enum StatusDemanda:
 A Demanda usa PENDENTE, EM_PRODUCAO, CONCLUIDA e CANCELADA no lugar do boolean. As
 transicoes sao protegidas: demanda cancelada nao pode ser concluida nem alterada, e
 demanda concluida nao pode ser cancelada. A demanda vira CANCELADA quando falta budget
 para fabricar. Tambem guarda o custo unitario estimado, usado para saber se ela e viavel.
- 
+
 Interface Auditavel:
 Maquina e Produto (hierarquias diferentes) implementam Auditavel. A auditoria geral do
 Gerenciador percorre uma lista de Auditavel com maquinas e produtos juntos, usando
 polimorfismo, e mostra se cada item precisa de manutencao ou descarte.
- 
+
 Cenarios (enum Cenario):
 - Ideal: budget de R$ 6000, desgaste e falha normais.
 - Apocaliptico: budget de R$ 2000, desgaste 1.5x e falha 1.4x maiores.
 O cenario e escolhido no comeco e aplicado a todas as maquinas.
- 
+
 Desgaste das maquinas:
 Cada uso reduz a saude da maquina de forma aleatoria (multiplicada pelo cenario). Quanto
 menor a saude, maior a chance de falha. Com saude 0 a maquina quebra e nao liga ate ser
 reparada. O reparo custa o custoReparo de cada maquina e sai do budget. Abaixo de 30 de
 saude a maquina "precisa de manutencao".
- 
+
 Armazem:
 Mostra os produtos acabados agrupados por tipo, com quantidade, qualidade, lote e risco.
 Cada placa recebe um lote quando entra em producao. E separado do estoque de materia-prima.
- 
+
 Menu:
 Menu principal com o cabecalho (estrategia, cenario e budget) e submenus de Demandas,
 Fabricacao, Consultar, Estrategia e Auditoria/Manutencao, alem da compra de materia-prima.
- 
+
 
  TAREFA 4
 ----------------------------------------------------------------------
@@ -118,3 +118,31 @@ regra da Tarefa 3: a demanda e cancelada quando falta orcamento para produzir.
 Entradas:
 As leituras do teclado repetem a pergunta em caso de entrada invalida e rejeitam NaN e infinito.
 As quantidades sao validadas no dominio (quantidade positiva, limite de inteiro).
+
+
+ TAREFA 5
+----------------------------------------------------------------------
+
+Hierarquia:
+GerenciadorProducao -> LinhaDeProducao (Agrupador) -> Maquina (Todo) -> Partes.
+ 
+Partes (composicao):
+- MotorDeAcionamento (1:1): gera calor; motor gasto aumenta a falha da maquina e, queimado, impede de ligar.
+- SensorDeTemperatura (1:1): em alerta a maquina falha mais e a placa ganha risco de defeito; no maximo, a maquina
+  superaquece e nao liga ate o reparo.
+- VentoinhaDeResfriamento (1:N): retira calor; ventoinha gasta ou parada faz a temperatura subir.
+Assim, uma parte com problema afeta o Todo.
+ 
+Construcao:
+As partes sao criadas no construtor da Maquina, a partir de valores primitivos, com campos final e sem getters. Elas
+pertencem so a maquina e deixam de existir com ela. O construtor valida os valores (minimo 1 ventoinha).
+As ventoinhas usam List (sao numeradas e ordenadas); as maquinas da linha tambem, pois a ordem e a das etapas.
+ 
+Agrupador (agregacao):
+A LinhaDeProducao guarda as maquinas (1:N), executa as etapas e gera a auditoria. E agregacao porque as maquinas sao
+criadas na Main e entregues por adicionarMaquina(); existem sem a linha.
+ 
+Demeter e auditoria:
+Nao ha getMotor(), getSensor() nem getter de ventoinhas: a maquina oferece repassadores e delega as acoes. O unico
+getter de colecao, getMaquinas(), devolve unmodifiableList. Linha, Maquina e as partes implementam Auditavel, e o
+relatorio desce em cascata (Linha > Maquina > Partes).
