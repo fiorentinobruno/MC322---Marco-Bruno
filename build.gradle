@@ -9,6 +9,13 @@ repositories {
     mavenCentral()
 }
 
+dependencies {
+    // JUnit 5 (Jupiter). O BOM fixa a mesma versão para todos os módulos do JUnit.
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
 java {
     // Compatível com qualquer JDK >= 17 (o código usa switch com setas, Java 14+).
     sourceCompatibility = JavaVersion.VERSION_17
@@ -16,7 +23,7 @@ java {
 }
 
 application {
-    mainClass = 'Main'
+    mainClass = 'br.unicamp.ic.mc322.Main'
     // Garante acentuação correta no terminal independentemente do sistema operacional.
     applicationDefaultJvmArgs = ['-Dfile.encoding=UTF-8', '-Dstdout.encoding=UTF-8']
 }
@@ -34,4 +41,15 @@ tasks.withType(Javadoc).configureEach {
 // O menu lê do teclado; sem isso o "./gradlew run" não receberia a entrada do usuário.
 tasks.named('run') {
     standardInput = System.in
+}
+
+// Testes automatizados: "./gradlew test" executa a suíte, e "./gradlew build" também (build -> check -> test).
+// O relatório HTML fica em build/reports/tests/test/index.html.
+tasks.named('test') {
+    useJUnitPlatform()
+    systemProperty 'file.encoding', 'UTF-8'
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat 'full'
+    }
 }
