@@ -146,3 +146,45 @@ Demeter e auditoria:
 Nao ha getMotor(), getSensor() nem getter de ventoinhas: a maquina oferece repassadores e delega as acoes. O unico
 getter de colecao, getMaquinas(), devolve unmodifiableList. Linha, Maquina e as partes implementam Auditavel, e o
 relatorio desce em cascata (Linha > Maquina > Partes).
+
+
+ TAREFA 6
+----------------------------------------------------------------------
+
+Pacotes:
+O codigo saiu do pacote raiz e foi dividido em br.unicamp.ic.mc322.model (entidades e partes),
+service (GerenciadorProducao e PlantaPadrao), strategy (padrao Strategy), persistence (XML) e
+exception (excecoes de dominio). O Main ficou em br.unicamp.ic.mc322. Os testes ficam em
+src/test/java, nos mesmos pacotes das classes testadas.
+
+Persistencia em XML:
+Uma unica classe, PersistenciaPlanta, conhece XML e arquivos (API DOM do proprio JDK, sem
+dependencia externa). O dominio so ganhou metodos para expor e restaurar o proprio estado com
+validacao (Maquina.restaurarEstado delega para motor, sensor e ventoinhas; Demanda.restaurar;
+GerenciadorProducao.restaurarEstado). Assim um objeto carregado respeita as mesmas regras de um
+objeto criado normalmente, e a composicao da Tarefa 5 e mantida: as partes continuam sendo criadas
+pelo construtor da maquina e so tem o estado restaurado depois.
+Salvamos o obrigatorio (estoque, maquinas com partes, demandas com status) e tambem orcamento,
+cenario, estrategia, contadores de placa/lote e o armazem, para a planta recuperada ser comparavel
+e nao repetir identificadores. Nao salvamos "ligada" (sempre desligada entre acoes), os geradores
+aleatorios, as placas rejeitadas (nao ficam em nenhuma colecao) e constantes do modelo. A
+justificativa completa esta no README, secao "Escopo e Limitacoes".
+
+Consistencia e erros:
+O carregamento monta uma planta nova e so a devolve se tudo for valido; o Main entao troca a
+planta inteira (sem misturar dados). Se falhar, a planta atual fica como estava. O salvamento grava
+num arquivo temporario e depois move para planta.xml, entao uma falha nao corrompe o save anterior.
+Todas as falhas viram PersistenciaException (subclasse de PlantaException, como na Tarefa 4) com um
+Motivo: arquivo inexistente, vazio, formato invalido, dados invalidos, falha de leitura ou escrita.
+A ausencia do arquivo na primeira execucao e tratada como normal: a planta padrao e montada. Com
+arquivo, o usuario escolhe continuar ou comecar de novo, e o arquivo so muda quando ele salva.
+
+Testes (JUnit 5):
+48 testes em 6 classes (dominio, estrategias, gerenciador e persistencia), executados por
+./gradlew test e tambem no ./gradlew build. Para os testes nao dependerem da sorte, a Maquina
+passou a sortear tudo por um unico gerador (sortear()), que pode ser trocado por
+definirGeradorAleatorio(); os testes usam um GeradorFixo que forca "nunca falha" ou "sempre falha".
+Os testes de persistencia usam @TempDir, isolados do arquivo real da aplicacao. O contador de
+placas, que era static no GerenciadorProducao, virou atributo de instancia: com static, uma planta
+carregada (ou um teste) herdaria a numeracao de outra planta.
+

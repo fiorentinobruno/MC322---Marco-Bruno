@@ -7,3 +7,6 @@ build/
 *.iml
 .DS_Store
 out/
+
+# Estado salvo pela aplicação em tempo de execução (não versionado)
+dados/
